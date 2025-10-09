@@ -1,3 +1,5 @@
+#include "tfa_messages.h" //not sure if this is nessesary here to use the struct
+
 //process registration requests from TFA clients
 
 //process authentication requests from Lodi server
