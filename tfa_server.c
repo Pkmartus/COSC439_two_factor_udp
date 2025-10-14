@@ -1,7 +1,40 @@
-#include "tfa_messages.h" //not sure if this is nessesary here to use the struct
+#include "tfa_messages.h"
+#include <stdio.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
-//process registration requests from TFA clients
+void DieWithError(char *errorMessage);
 
-//process authentication requests from Lodi server
+int main(int argc, char *argv[])
+{
+    //local
+    int sock;
+    struct sockaddr_in fromAddr;
+    unsigned short tfaServerPort;
 
-//send PUSH notifiactions to the user's TFA client
+    //TFA Client
+    struct sockaddr_in tfaClientAddr;
+    TFAClientOrLodiServerToTFAServer tfaRegister; //buffer for registering tfa message
+    TFAServerToTFAClient tfaConfirm; //confirm tfa message
+    TFAClientOrLodiServerToTFAServer tfaRegAck; //buffer for register acknowlegement
+    TFAServerToTFAClient tfaPush; //message to send to TFA client
+    TFAClientOrLodiServerToTFAServer pushAck; // buffer for push acknowlegement
+
+    //Lodi Server
+    struct sockaddr_in lodiServerAddr; //address
+    TFAClientOrLodiServerToTFAServer authRequest; //buffer for auth request
+    TFAServerToLodiServer authResponse; //message to send back to Lodi Server
+    
+    
+
+
+   //process registration requests from TFA clients
+
+    //process authentication requests from Lodi server
+
+    //send PUSH notifiactions to the user's TFA client 
+}
+

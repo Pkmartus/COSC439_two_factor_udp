@@ -10,7 +10,7 @@ void DieWithError(char *errorMessage);
 int main(int argc, char *argv[]) //argc counts the arguments and argv contains them
 {
     //initialize variables adapted from example code
-    int sock; //socket
+    int sock; //socket (not sure if singular or one needed for each server used)
     struct sockaddr_in fromAddr; //local address
 
     //PKE variables
