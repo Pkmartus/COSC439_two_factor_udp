@@ -16,12 +16,17 @@ int main(int argc, char *argv[])
     unsigned short tfaServerPort;
 
     //TFA Client
+    //todo create a list of tfa clients allowing for a push to be sent back to those clients
     struct sockaddr_in tfaClientAddr;
     TFAClientOrLodiServerToTFAServer tfaRegister; //buffer for registering tfa message
     TFAServerToTFAClient tfaConfirm; //confirm tfa message
     TFAClientOrLodiServerToTFAServer tfaRegAck; //buffer for register acknowlegement
     TFAServerToTFAClient tfaPush; //message to send to TFA client
     TFAClientOrLodiServerToTFAServer pushAck; // buffer for push acknowlegement
+
+    //list of registered clients
+    char *userIds[20]; //array of 20 strings of a length up to 30
+    int publicKeys[20];
 
     //Lodi Server
     struct sockaddr_in lodiServerAddr; //address

@@ -34,7 +34,10 @@ int main(int argc, char *argv[])
     TFAClientOrLodiServerToTFAServer tfaRequest; //message to send to TFA server
     TFAServerToLodiServer tfaResponse; //buffer for response from TFA server
 
-
+    //currently logged in
+    struct sockaddr_in loggedInCLients[20]; //20 should be plenty for the number of clients we'll probably have
+    char *userIds[20];
+    int publicKeys[20]; 
 
 
     //Recieve a login message from Lodi client

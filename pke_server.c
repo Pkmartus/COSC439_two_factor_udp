@@ -15,6 +15,7 @@ int main(int argc, char * argv[])
     struct sockaddr_in fromAddr;
     unsigned short pkeServerPort;
 
+    //todo create a list of lodi clients and primary keys so that the keys can be retrieved by request key events
     //Lodi Client
     struct sockaddr_in lodiClientAddr; //address
     PClientToLodiServer clientRegisterKey; //buffer for register key message
@@ -22,6 +23,10 @@ int main(int argc, char * argv[])
     //Lodi Server
     struct sockaddr_in lodiServerAddr; //address
     PClientToLodiServer serverRequestKey; //buffer for request PK message
+
+    //registered list of pke clients
+    char *registeredUserIds[20];
+    int registeredPublicKeys[20];
 
     
     //process key registration
