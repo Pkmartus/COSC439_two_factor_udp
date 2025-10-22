@@ -1,4 +1,5 @@
 #include "lodi_messages.h"
+#include "pke_messages.h"
 #include <sys/socket.h> //needed to use socket(), connect(), sendto() and recvfrom()
 #include <arpa/inet.h> // sockaddr and inet_addr()
 #include <stdlib.h>
@@ -17,8 +18,8 @@ int main(int argc, char *argv[]) //argc counts the arguments and argv contains t
     struct sockaddr_in pkeServAddr; //pke server address
     unsigned short pkeServPort; //pke server port
     char *pkeServIP; //the ip address of the server
-    PClientTOPKServer registerKey; //message to send to pke server
-    PKServerTOPClientOrLodiServer ackRegisterKey; //buffer for response from PKE server
+    TOPKServer registerKey; //message to send to pke server
+    FromPKServer ackRegisterKey; //buffer for response from PKE server
 
     //Lodi Server variables
     struct sockaddr_in lodiServAddr; //lodi server address

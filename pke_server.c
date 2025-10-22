@@ -1,4 +1,4 @@
-#include "lodi_messages.h"
+#include <pke_messages.h>
 #include <stdio.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -16,13 +16,9 @@ int main(int argc, char * argv[])
     unsigned short pkeServerPort;
 
     //todo create a list of lodi clients and primary keys so that the keys can be retrieved by request key events
-    //Lodi Client
+    //Incoming message could be from Lodi client, Lodi Server, or PKE Server
     struct sockaddr_in lodiClientAddr; //address
-    PClientToLodiServer clientRegisterKey; //buffer for register key message
-
-    //Lodi Server
-    struct sockaddr_in lodiServerAddr; //address
-    PClientToLodiServer serverRequestKey; //buffer for request PK message
+    TOPKServer clientRegisterKey; //buffer for register key message
 
     //registered list of pke clients
     char *registeredUserIds[20];

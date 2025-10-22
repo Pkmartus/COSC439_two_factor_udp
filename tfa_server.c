@@ -1,3 +1,4 @@
+#include "pke_messages.h"
 #include "tfa_messages.h"
 #include <stdio.h>
 #include <sys/socket.h>
@@ -23,6 +24,11 @@ int main(int argc, char *argv[])
     TFAClientOrLodiServerToTFAServer tfaRegAck; //buffer for register acknowlegement
     TFAServerToTFAClient tfaPush; //message to send to TFA client
     TFAClientOrLodiServerToTFAServer pushAck; // buffer for push acknowlegement
+
+    //PKE Server
+    struct sockaddr_in pkeserverAddr;
+    TOPKServer pkRequest;
+    FromPKServer pkResponse;
 
     //list of registered clients
     char *userIds[20]; //array of 20 strings of a length up to 30

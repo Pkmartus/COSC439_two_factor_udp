@@ -1,4 +1,5 @@
 #include "tfa_messages.h"
+#include "pke_messages.h"
 #include "lodi_messages.h"
 #include <stdio.h>
 #include <sys/socket.h>
@@ -24,8 +25,8 @@ int main(int argc, char *argv[])
     struct sockaddr_in pkeServAddr; //pke server address
     unsigned short pkeServPort; //pke server port
     char *pkeServIP; //the ip address of the PKE server
-    PClientTOPKServer pkeRequest; //message to send to pke server
-    PKServerTOPClientOrLodiServer pkeResponse; //buffer for response from PKE server
+    TOPKServer pkeRequest; //message to send to pke server
+    FromPKServer pkeResponse; //buffer for response from PKE server
 
     //TFA Server
     struct sockaddr_in tfaServAddr; //tfa server address
