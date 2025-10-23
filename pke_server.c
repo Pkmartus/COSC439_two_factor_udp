@@ -21,7 +21,7 @@ int main(int argc, char * argv[])
     TOPKServer clientRegisterKey; //buffer for register key message
 
     //registered list of pke clients
-    char *registeredUserIds[20];
+    int registeredUserIds[20];
     int registeredPublicKeys[20];
 
     

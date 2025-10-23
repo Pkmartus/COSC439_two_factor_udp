@@ -12,7 +12,6 @@ void DieWithError(char *errorMessage);
 int main(int argc, char *argv[])
 {
     //local
-    int sock;
     struct sockaddr_in fromAddr;
     unsigned short tfaServerPort;
 
@@ -26,6 +25,9 @@ int main(int argc, char *argv[])
     TFAClientOrLodiServerToTFAServer pushAck; // buffer for push acknowlegement
 
     //PKE Server
+    int pkeSock;
+    unsigned short pkeServPort; //lodi server port
+    char *pkeServIP; //ip of lodi server
     struct sockaddr_in pkeserverAddr;
     TOPKServer pkRequest;
     FromPKServer pkResponse;

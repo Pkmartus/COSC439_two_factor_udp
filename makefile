@@ -4,7 +4,7 @@ CFLAGS = -Wall -g
 
 all: lodi_client
 
-lodi_client: lodi_client.o DieWithError.o
+lodi_client: lodi_client.o DieWithError.o 
 	$(CC) $(CFLAGS) -o lodi_client lodi_client.o DieWithError.o
 
 lodi_client.o: lodi_client.c
