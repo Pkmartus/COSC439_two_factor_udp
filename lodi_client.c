@@ -1,5 +1,4 @@
 /*lodi_client.c*/
-
 #include "lodi_messages.h"
 #include "pke_messages.h"
 #include "rsa.h"
@@ -17,7 +16,7 @@ int main(int argc, char *argv[]) //argc counts the arguments and argv contains t
 {
     //initialize variables adapted from example code
     struct sockaddr_in fromAddr; //local address
-    unsigned int fromSize; //the size of the address for recvfrom()
+    unsigned int fromSize; //the size of the address for recvfrom() (may need to change this to be seperate for each server)
 
     //PKE variables
     int pkeSock; //socket (not sure if singular or one needed for each server used)
@@ -33,13 +32,23 @@ int main(int argc, char *argv[]) //argc counts the arguments and argv contains t
     unsigned short lodiServPort; //lodi server port
     char *lodiServIP; //ip of lodi server
     PClientToLodiServer loginMessage; //message to Lodi server
-    LodiServerToLodiClientAcks ackLogin; //buffer for response from lodi server
+    LodiServerToLodiClientAcks ackLoginMessage; //buffer for response from lodi server
+    unsigned int ackLoginSize; //length of the acknowlegment message
     
     //test for correct number of arguments
     if ((argc < 3) || (argc > 3)) {
         fprintf(stderr, "Usage: %s <Lodi Server IP> [<Lodi Server Port>]\n", argv[0]);
         exit(1);
     }
+
+    //compute public and private keys
+        //come up with 2 large primes p and q
+    unsigned int p = 7;
+    unsigned int q = 11;
+    long n = p*q;
+    long phiN = (p-1)*(q-1);
+    long privateKey = computePrivateKey(phiN);
+    long publicKey = computePublicKey(privateKey, phiN);
 
     // sumit users public key to PKE server
 
@@ -69,9 +78,27 @@ int main(int argc, char *argv[]) //argc counts the arguments and argv contains t
     lodiServAddr.sin_addr.s_addr = inet_addr(lodiServIP); //lodi server ip
     lodiServAddr.sin_port = htons(lodiServPort); //lodi server port
 
+    //send login request to Lodi Server
     if (sendto(lodiSock, (void*)&loginMessage, sizeof(loginMessage), 0, (struct sockaddr *)&lodiServAddr, sizeof(lodiServAddr)) != sizeof(loginMessage))
         DieWithError("sendto() sent a different number of bytes than expected");
 
-//exit
+    //Recieve the response
+    fromSize = sizeof(fromAddr);
+    ackLoginSize = sizeof(ackLoginMessage);
+    memset(&ackLoginMessage, 0, ackLoginSize); //zero out structure
 
+
+    if ((ackLoginSize = recvfrom(lodiSock, (void *)&ackLoginMessage, ackLoginSize, 0, 
+            (struct sockaddr *)&fromAddr, &fromSize)) < 0)
+        DieWithError("Login Acknowlegement from the server failed.");
+
+    //check that response came from correct server
+    if(lodiServAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr)
+        DieWithError("Packet from unknown source");
+
+    printf("response recieved from server \n");
+    
+    //exit
+    close(lodiSock);
+    exit(0);
 }

@@ -24,6 +24,8 @@ int main(int argc, char *argv[])
     unsigned int lodiClientAddrLen; //length of incoming message?
     PClientToLodiServer loginRequest; //buffer for login message
     int loginRequestSize; //size of login message
+    LodiServerToLodiClientAcks ackLoginMessage; //acknowlegement to be sent to client
+    unsigned int ackLoginSize;
 
     //PKE Server
     struct sockaddr_in pkeServAddr; //pke server address
@@ -74,14 +76,26 @@ int main(int argc, char *argv[])
         lodiClientAddrLen = sizeof(lodiClientAddr);
 
         //clear out memory for login request
-        memset(&loginRequest, 0, sizeof(loginRequest));
+        loginRequestSize = sizeof(loginRequest);
+        memset(&loginRequest, 0, loginRequestSize);
 
         //block until message recieved (message struct must be cast to void *)
-        if ((loginRequestSize = recvfrom(sock, (void *)&loginRequest, sizeof(loginRequest), 0, 
+        if ((loginRequestSize = recvfrom(sock, (void *)&loginRequest, loginRequestSize, 0, 
                                             (struct sockaddr *) &lodiClientAddr, &lodiClientAddrLen)) < 0)
             DieWithError("recvfrom() failed");
 
         printf("Message Recieved: %d\n", loginRequest.userID);
+
+        //create message
+        memset(&ackLoginMessage, 0, sizeof(ackLogin));
+        ackLoginMessage.messageType = ackLogin;
+        ackLoginMessage.userID = loginRequest.userID;
+        ackLoginSize = sizeof(ackLoginMessage);
+
+        //send a message back
+        if (sendto(sock, (void *)&ackLoginMessage, ackLoginSize, 0,
+                    (struct sockaddr *) &lodiClientAddr, lodiClientAddrLen) != ackLoginSize)
+            DieWithError("Acknowlegement message failed to send");
 
     }
 }
