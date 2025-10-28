@@ -20,4 +20,4 @@ DieWithError.o: DieWithError.c
 	$(CC) $(CFLAGS) -c DieWithError.c
 
 clean:
-	rm -f lodi_client *.o
+	rm -f lodi_client lodi_server *.o

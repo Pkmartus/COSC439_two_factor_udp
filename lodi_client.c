@@ -48,8 +48,9 @@ int main(int argc, char *argv[]) //argc counts the arguments and argv contains t
     //set ip for lodi server 
     lodiServIP = argv[1];
     //set message varriables
+    memset(&loginMessage, 0, sizeof(loginMessage));
     loginMessage.messageType = login;
-    loginMessage.userID = 1;
+    loginMessage.userID = 42;
     loginMessage.recipientID = 0;
     long currentTime = (long)time(NULL);
     loginMessage.timestamp = currentTime;

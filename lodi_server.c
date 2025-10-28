@@ -73,12 +73,15 @@ int main(int argc, char *argv[])
         //set size of in/out parameter
         lodiClientAddrLen = sizeof(lodiClientAddr);
 
+        //clear out memory for login request
+        memset(&loginRequest, 0, sizeof(loginRequest));
+
         //block until message recieved (message struct must be cast to void *)
         if ((loginRequestSize = recvfrom(sock, (void *)&loginRequest, sizeof(loginRequest), 0, 
                                             (struct sockaddr *) &lodiClientAddr, &lodiClientAddrLen)) < 0)
             DieWithError("recvfrom() failed");
 
-        printf("Message Recieved %s\n");
+        printf("Message Recieved: %d\n", loginRequest.userID);
 
     }
 }
