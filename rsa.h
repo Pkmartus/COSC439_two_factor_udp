@@ -2,12 +2,12 @@
 #ifndef RSA_H
 #define RSA_H
 
-long rsa_encrypt(long encryption_input, unsigned int privateKey) 
+long rsaEncrypt(long encryption_input, unsigned int privateKey) 
 {
     return encryption_input*privateKey;
 }
 
-long rsa_decrypt(long decryption_input, unsigned int publicKey)
+long rsaDecrypt(long decryption_input, unsigned int publicKey)
 {
     return decryption_input/publicKey;
 }

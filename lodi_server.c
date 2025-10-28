@@ -1,5 +1,5 @@
 /*lodi_server.c*/
-
+#include "rsa.h"
 #include "tfa_messages.h"
 #include "pke_messages.h"
 #include "lodi_messages.h"
@@ -84,7 +84,20 @@ int main(int argc, char *argv[])
                                             (struct sockaddr *) &lodiClientAddr, &lodiClientAddrLen)) < 0)
             DieWithError("recvfrom() failed");
 
-        printf("Message Recieved: %d\n", loginRequest.userID);
+        //get public key from pke server
+        int pke = 5;
+
+        //decrypt signature using key
+        if(rsaDecrypt(loginRequest.digitalSig, pke) != loginRequest.timestamp)
+            DieWithError("Signature doesn't match timestamp");
+
+        //send request to TFA server
+
+        //recieve request from TFA server
+
+        printf("Message Recieved: %d%d\n", rsaDecrypt(loginRequest.digitalSig, pke), loginRequest.timestamp);
+
+        //handle any errors with authentication
 
         //create message
         memset(&ackLoginMessage, 0, sizeof(ackLogin));
