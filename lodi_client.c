@@ -42,13 +42,6 @@ int main(int argc, char *argv[]) //argc counts the arguments and argv contains t
     }
 
     //compute public and private keys
-    //come up with 2 large primes p and q
-    unsigned int p = 7;
-    unsigned int q = 11;
-    //compute n from p and q
-    long n = p*q;
-    //Phi(n)
-    long phiN = (p-1)*(q-1);
     //private key and public key are flipped from rsa slides. In slides public key encrypts and private key decrypts.
     long privateKey = computePrivateKey(phiN);
     long publicKey = computePublicKey(privateKey, phiN);
