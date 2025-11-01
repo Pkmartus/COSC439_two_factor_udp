@@ -10,13 +10,6 @@ const unsigned long n = p*q;
 //Phi(n)
 const unsigned long phiN = (p-1)*(q-1);
 
-//method declarations
-unsigned long powerMod(unsigned long base, unsigned long exp);
-unsigned long rsaEncrypt(unsigned long encryption_input, unsigned long privateKey);
-unsigned long rsaDecrypt(unsigned long decryption_input, unsigned long publicKey);
-unsigned long computePrivateKey(unsigned long phiN);
-unsigned long computePublicKey(unsigned long privateKey, unsigned long phiN);
-
 //modular multiplacation to prevent overflow
 unsigned long modularMultiplacation(unsigned long a, unsigned long b, unsigned long mod) {
     unsigned long result = 0;
@@ -72,16 +65,6 @@ unsigned long computePrivateKey(unsigned long phiN)
         if (a == 1) return e;
     }
     return 0;
-}
-
-// returns gcd and sets x,y so that ax + by = gcd
-long egcd(long a, long b, long *x, long *y) {
-    if (b == 0) { *x = 1; *y = 0; return a; }
-    long x1, y1;
-    long g = egcd(b, a % b, &x1, &y1);
-    *x = y1;
-    *y = x1 - (a / b) * y1;
-    return g;
 }
 
 unsigned long computePublicKey(unsigned long privateKey, unsigned long phiN)

@@ -87,11 +87,6 @@ int main(int argc, char *argv[])
         unsigned long clientPublicKey = computePublicKey(computePrivateKey(phiN), phiN);
         unsigned long decryptedValue = rsaDecrypt(loginRequest.digitalSig, clientPublicKey);
 
-        printf("Received timestamp: %lu\n", loginRequest.timestamp);
-        printf("Received signature: %lu\n", loginRequest.digitalSig);
-        printf("Decrypted signature: %lu\n", decryptedValue);
-        printf("Match: %s\n", (decryptedValue == loginRequest.timestamp) ? "YES" : "NO");
-
         //decrypt signature using key
         if(rsaDecrypt(loginRequest.digitalSig, clientPublicKey) != loginRequest.timestamp)
             DieWithError("Signature doesn't match timestamp");

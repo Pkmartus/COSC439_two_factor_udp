@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) //argc counts the arguments and argv contains t
         DieWithError("socket() failed");
 
     //register public key with PKE server
-
+    /*
     //submit users public key to PKE server
     //get ip from keyboard
     printf("Enter IP for Primary Key Server: \n");
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) //argc counts the arguments and argv contains t
             (struct sockaddr *)&pkeServAddr, sizeof(pkeServAddr)) != sizeof(registerKeyMessage))
         DieWithError("sendto() sent a different number of bytes than expected");
 
-    /*//recieve acknowlegement from pke server
+    //recieve acknowlegement from pke server
     fromSize = sizeof(fromAddr);
     ackRegSize = sizeof(ackRegistrerKey);
     memset(&ackRegisterKeyMessage, 0, ackRegSize); //zero out structure
