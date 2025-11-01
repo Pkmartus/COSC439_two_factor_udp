@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) //argc counts the arguments and argv contains t
     if(lodiServAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr)
         DieWithError("Packet from unknown source");
 
-    printf("response recieved from Lodi server \n");
+    printf("response recieved from Lodi server, Login Successful \n");
     
     //exit
     close(lodiSock);

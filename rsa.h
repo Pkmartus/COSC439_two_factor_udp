@@ -24,9 +24,6 @@ unsigned long modularMultiplacation(unsigned long a, unsigned long b, unsigned l
     return result;
 }
 
-
-
-
 unsigned long powerMod(unsigned long base, unsigned long exp) {
     unsigned long result = 1;
     base = base % n; //reduce the base by n
