@@ -17,14 +17,17 @@ int main(int argc, char *argv[]) //argc counts the arguments and argv contains t
     //initialize variables adapted from example code
     struct sockaddr_in fromAddr; //local address
     unsigned int fromSize; //the size of the address for recvfrom() (may need to change this to be seperate for each server)
+    unsigned int userID;
 
     //PKE variables
     int pkeSock; //socket (not sure if singular or one needed for each server used)
     struct sockaddr_in pkeServAddr; //pke server address
     unsigned short pkeServPort; //pke server port
     char *pkeServIP; //the ip address of the server
-    TOPKServer registerKey; //message to send to pke server
-    FromPKServer ackRegisterKey; //buffer for response from PKE server
+    pkeServIP = malloc(16 * sizeof(char)); //nessesary if using kb input to set string
+    TOPKServer registerKeyMessage; //message to send to pke server
+    FromPKServer ackRegisterKeyMessage; //buffer for response from PKE server
+    unsigned int ackRegSize; //size of the ackRegisterKey message
 
     //Lodi Server variables
     int lodiSock; //socket (not sure if singular or one needed for each server used)
@@ -41,17 +44,72 @@ int main(int argc, char *argv[]) //argc counts the arguments and argv contains t
         exit(1);
     }
 
+    //get user ID
+    printf("please enter user ID: \n");
+    scanf("%u", &userID);    
+
     //compute public and private keys
     //private key and public key are flipped from rsa slides. In slides public key encrypts and private key decrypts.
-    long privateKey = computePrivateKey(phiN);
-    long publicKey = computePublicKey(privateKey, phiN);
+    unsigned int privateKey = computePrivateKey(phiN);
+    unsigned int publicKey = computePublicKey(privateKey, phiN);
+    printf("%d\n", privateKey);
+    printf("%d\n", publicKey);
 
-    // sumit users public key to PKE server
+    //Create a datagram/UDP socket
+    if ((lodiSock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
+        DieWithError("socket() failed");
+
+    //register public key with PKE server
+
+    //submit users public key to PKE server
+    //get ip from keyboard
+    printf("Enter IP for Primary Key Server: \n");
+    scanf("%15s", pkeServIP);
+
+    //get the server port
+    printf("Enter port for Primary Key Server: \n");
+    scanf("%hu", &pkeServPort);
+
+    //set message values
+    memset(&registerKeyMessage, 0, sizeof(registerKeyMessage));
+    registerKeyMessage.messageType = registerKey;
+    registerKeyMessage.publicKey = publicKey;
+    registerKeyMessage.userID = userID;
+
+    //set PKE server address structure
+    memset(&pkeServAddr, 0, sizeof(pkeServAddr));
+    pkeServAddr.sin_family = AF_INET;
+    pkeServAddr.sin_addr.s_addr = inet_addr(pkeServIP);
+    pkeServAddr.sin_port = htons(pkeServPort);
+
+    //send primary key to pke server
+    if (sendto(lodiSock, (void*)&registerKeyMessage, sizeof(registerKeyMessage), 0, 
+            (struct sockaddr *)&pkeServAddr, sizeof(pkeServAddr)) != sizeof(registerKeyMessage))
+        DieWithError("sendto() sent a different number of bytes than expected");
+
+    /*//recieve acknowlegement from pke server
+    fromSize = sizeof(fromAddr);
+    ackRegSize = sizeof(ackRegistrerKey);
+    memset(&ackRegisterKeyMessage, 0, ackRegSize); //zero out structure
+
+
+    if ((ackRegSize = recvfrom(lodiSock, (void *)&ackRegisterKeyMessage, ackRegSize, 0, 
+            (struct sockaddr *)&fromAddr, &fromSize)) < 0)
+        DieWithError("Login Acknowlegement from the server failed.");
+
+    //check that response came from correct server
+    if(pkeServAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr)
+        DieWithError("Packet from unknown source");
+
+    printf("response recieved from pke server \n");*/
 
     //Perform authentication process with Lodi Server
     
     //set ip for lodi server 
     lodiServIP = argv[1];
+    //set server port
+    lodiServPort = atoi(argv[2]);
+
     //set message varriables
     memset(&loginMessage, 0, sizeof(loginMessage));
     loginMessage.messageType = login;
@@ -59,15 +117,8 @@ int main(int argc, char *argv[]) //argc counts the arguments and argv contains t
     loginMessage.recipientID = 0;
     long currentTime = (long)time(NULL);
     loginMessage.timestamp = currentTime;
-    loginMessage.digitalSig = rsaEncrypt(currentTime, 5); //temperary hardcoded pk
+    loginMessage.digitalSig = rsaEncrypt(currentTime, privateKey);
 
-    //set server port
-    lodiServPort = atoi(argv[2]);
-
-    //Create a datagram/UDP socket for Lodi Sever
-    if ((lodiSock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
-        DieWithError("socket() failed");
-    
     //set lodi server address structure
     memset(&lodiServAddr, 0, sizeof(lodiServAddr)); //zero out structure
     lodiServAddr.sin_family = AF_INET; //Internet addr family
@@ -92,7 +143,7 @@ int main(int argc, char *argv[]) //argc counts the arguments and argv contains t
     if(lodiServAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr)
         DieWithError("Packet from unknown source");
 
-    printf("response recieved from server \n");
+    printf("response recieved from Lodi server \n");
     
     //exit
     close(lodiSock);

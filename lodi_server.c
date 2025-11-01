@@ -84,18 +84,23 @@ int main(int argc, char *argv[])
                                             (struct sockaddr *) &lodiClientAddr, &lodiClientAddrLen)) < 0)
             DieWithError("recvfrom() failed");
 
-        //get public key from pke server
-        int pke = 5;
+        unsigned long clientPublicKey = computePublicKey(computePrivateKey(phiN), phiN);
+        unsigned long decryptedValue = rsaDecrypt(loginRequest.digitalSig, clientPublicKey);
+
+        printf("Received timestamp: %lu\n", loginRequest.timestamp);
+        printf("Received signature: %lu\n", loginRequest.digitalSig);
+        printf("Decrypted signature: %lu\n", decryptedValue);
+        printf("Match: %s\n", (decryptedValue == loginRequest.timestamp) ? "YES" : "NO");
 
         //decrypt signature using key
-        if(rsaDecrypt(loginRequest.digitalSig, pke) != loginRequest.timestamp)
+        if(rsaDecrypt(loginRequest.digitalSig, clientPublicKey) != loginRequest.timestamp)
             DieWithError("Signature doesn't match timestamp");
 
         //send request to TFA server
 
         //recieve request from TFA server
 
-        printf("Message Recieved: %d%d\n", rsaDecrypt(loginRequest.digitalSig, pke), loginRequest.timestamp);
+        //printf("Message Recieved: %d%d\n", rsaDecrypt(loginRequest.digitalSig, pke), loginRequest.timestamp);
 
         //handle any errors with authentication
 
