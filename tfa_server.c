@@ -1,7 +1,6 @@
 #include "pke_messages.h"
 #include "tfa_messages.h"
 #include "rsa.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,12 +9,14 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <errno.h>
-#include <time.h>
+#include <sys/time.h>
 
 void DieWithError(char *errorMessage);
 
-#define TFA_DEFAULT_PORT 40002
-#define PKE_DEFAULT_PORT 40001
+#define TFA_DEFAULT_IP "127.0.0.1"
+#define TFA_DEFAULT_PORT 5051
+#define PKE_DEFAULT_IP "127.0.0.1" //will need to change this when we use gcp
+#define PKE_DEFAULT_PORT 5052
 #define MAX_CLIENTS 20
 #define RECV_TIMEOUT_MS 2500
 #define ACK_RETRIES 2  /* how many timeout periods we’ll wait for ackPushTFA */
@@ -27,12 +28,13 @@ static void set_recv_timeout(int sock, int ms) {
     (void)setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 }
 
-static void ip_to_str(const struct sockaddr_in *addr, char *buf, size_t len) {
-    inet_ntop(AF_INET, &(addr->sin_addr), buf, len);
-}
+// static void ip_to_str(const struct sockaddr_in *addr, char *buf, size_t len) {
+//     inet_ntop(AF_INET, &(addr->sin_addr), buf, len);
+// }
 
 typedef struct {
     unsigned int userID;
+    unsigned int publicKey;
     struct sockaddr_in addr; /* TFA client’s last known IP:port */
     int in_use;
 } RegEntry;
@@ -44,7 +46,7 @@ static int find_entry(RegEntry *tab, int n, unsigned int userID) {
     return -1;
 }
 
-static int upsert_entry(RegEntry *tab, int n, unsigned int userID, const struct sockaddr_in *addr) {
+static int upsert_entry(RegEntry *tab, int n, unsigned int userID, unsigned int publicKey, const struct sockaddr_in *addr) {
     int idx = find_entry(tab, n, userID);
     if (idx >= 0) {
         tab[idx].addr = *addr;
@@ -54,6 +56,7 @@ static int upsert_entry(RegEntry *tab, int n, unsigned int userID, const struct 
         if (!tab[i].in_use) {
             tab[i].in_use = 1;
             tab[i].userID = userID;
+            tab[i].publicKey = publicKey;
             tab[i].addr   = *addr;
             return i;
         }
@@ -64,7 +67,7 @@ static int upsert_entry(RegEntry *tab, int n, unsigned int userID, const struct 
 int main(int argc, char *argv[]) {
     /* ---- CLI ---- */
     unsigned short tfaPort = TFA_DEFAULT_PORT;
-    const char *pkeIP = "127.0.0.1";
+    const char *pkeIP = PKE_DEFAULT_IP;
     unsigned short pkePort = PKE_DEFAULT_PORT;
 
     if (argc == 1) {
@@ -97,7 +100,7 @@ int main(int argc, char *argv[]) {
 
     set_recv_timeout(sock, RECV_TIMEOUT_MS);
 
-    char selfIp[INET_ADDRSTRLEN] = "0.0.0.0";
+    char selfIp[INET_ADDRSTRLEN] = TFA_DEFAULT_IP;
     printf("[TFA_SERVER] Listening on %s:%hu\n", selfIp, tfaPort);
 
     /* ---- PKE server address ---- */
@@ -208,7 +211,7 @@ int main(int argc, char *argv[]) {
                 }
 
                 /* Store/overwrite registration address */
-                int idx = upsert_entry(regTable, MAX_CLIENTS, in.userID, &fromAddr);
+                int idx = upsert_entry(regTable, MAX_CLIENTS, in.userID, pkResp.publicKey, &fromAddr);
                 if (idx < 0) {
                     printf("[TFA_SERVER] Registration table FULL; user=%u not stored\n", in.userID);
                     break;
