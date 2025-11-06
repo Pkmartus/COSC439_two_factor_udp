@@ -34,7 +34,6 @@ static void set_recv_timeout(int sock, int ms) {
 
 typedef struct {
     unsigned int userID;
-    unsigned int publicKey;
     struct sockaddr_in addr; /* TFA client’s last known IP:port */
     int in_use;
 } RegEntry;
@@ -46,7 +45,7 @@ static int find_entry(RegEntry *tab, int n, unsigned int userID) {
     return -1;
 }
 
-static int upsert_entry(RegEntry *tab, int n, unsigned int userID, unsigned int publicKey, const struct sockaddr_in *addr) {
+static int upsert_entry(RegEntry *tab, int n, unsigned int userID, const struct sockaddr_in *addr) {
     int idx = find_entry(tab, n, userID);
     if (idx >= 0) {
         tab[idx].addr = *addr;
@@ -56,7 +55,6 @@ static int upsert_entry(RegEntry *tab, int n, unsigned int userID, unsigned int 
         if (!tab[i].in_use) {
             tab[i].in_use = 1;
             tab[i].userID = userID;
-            tab[i].publicKey = publicKey;
             tab[i].addr   = *addr;
             return i;
         }
@@ -211,7 +209,7 @@ int main(int argc, char *argv[]) {
                 }
 
                 /* Store/overwrite registration address */
-                int idx = upsert_entry(regTable, MAX_CLIENTS, in.userID, pkResp.publicKey, &fromAddr);
+                int idx = upsert_entry(regTable, MAX_CLIENTS, in.userID, &fromAddr);
                 if (idx < 0) {
                     printf("[TFA_SERVER] Registration table FULL; user=%u not stored\n", in.userID);
                     break;
