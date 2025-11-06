@@ -12,6 +12,12 @@
 
 void DieWithError(char *errorMessage);
 
+#define TFA_DEFAULT_IP "127.0.0.1"
+#define TFA_DEFAULT_PORT 5051
+#define PKE_DEFAULT_IP "127.0.0.1"
+#define PKE_DEFAULT_PORT 5052
+#define LODI_DEFAULT_PORT 5050
+
 int main(int argc, char *argv[])
 {
     // local
@@ -51,13 +57,13 @@ int main(int argc, char *argv[])
     int publicKeys[20];
 
     // check correct number of arguments
-    if (argc != 2)
-    {
-        fprintf(stderr, "Usage: %s <Lodi Server Port>\n", argv[0]);
-        exit(1);
-    }
+    // if (argc != 2)
+    // {
+    //     fprintf(stderr, "Usage: %s <Lodi Server Port>\n", argv[0]);
+    //     exit(1);
+    // }
 
-    lodiServerPort = atoi(argv[1]); // first argument is the local port
+    lodiServerPort = LODI_DEFAULT_PORT; // first argument is the local port
 
     // Create datagram UDP Socket
     if ((sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
@@ -73,21 +79,29 @@ int main(int argc, char *argv[])
     if (bind(sock, (struct sockaddr *)&lodiServAddr, sizeof(lodiServAddr)) < 0)
         DieWithError("bind() failed");
 
-    //get ip from keyboard
-    printf("Enter IP for Primary Key Server: \n");
-    scanf("%15s", pkeServIP);
+    // //get ip from keyboard
+    // printf("Enter IP for Primary Key Server: \n");
+    // scanf("%15s", pkeServIP);
 
-    //get the server port
-    printf("Enter port for Primary Key Server: \n");
-    scanf("%hu", &pkeServPort);
+    // //get the server port
+    // printf("Enter port for Primary Key Server: \n");
+    // scanf("%hu", &pkeServPort);
 
-    //get ip from keyboard
-    printf("Enter IP for Two Factor Server: \n");
-    scanf("%15s", tfaServIP);
+    // //get ip from keyboard
+    // printf("Enter IP for Two Factor Server: \n");
+    // scanf("%15s", tfaServIP);
 
-    //get the server port
-    printf("Enter port for Two Factor Server: \n");
-    scanf("%hu", &tfaServPort);
+    // //get the server port
+    // printf("Enter port for Two Factor Server: \n");
+    // scanf("%hu", &tfaServPort);
+
+    //setup pke ip and port
+    pkeServIP = PKE_DEFAULT_IP;
+    pkeServPort = PKE_DEFAULT_PORT;
+
+    //setup tfa ip and port
+    tfaServIP = TFA_DEFAULT_IP;
+    tfaServPort = TFA_DEFAULT_PORT;
 
     for (;;) // run forever
     {

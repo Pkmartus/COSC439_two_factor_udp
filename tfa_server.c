@@ -28,9 +28,9 @@ static void set_recv_timeout(int sock, int ms) {
     (void)setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 }
 
-// static void ip_to_str(const struct sockaddr_in *addr, char *buf, size_t len) {
-//     inet_ntop(AF_INET, &(addr->sin_addr), buf, len);
-// }
+static void ip_to_str(const struct sockaddr_in *addr, char *buf, size_t len) {
+    inet_ntop(AF_INET, &(addr->sin_addr), buf, len);
+}
 
 typedef struct {
     unsigned int userID;

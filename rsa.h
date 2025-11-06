@@ -3,12 +3,17 @@
 #define RSA_H
 
 //come up with 2 large primes p and q
-const unsigned long p = 83639;
-const unsigned long q = 92737;
+const unsigned long p = 7687;
+const unsigned long q = 7489;
 //compute n from p and q
 const unsigned long n = p*q;
 //Phi(n)
 const unsigned long phiN = (p-1)*(q-1);
+
+//reduce timestamp to avoid overflow
+unsigned long reduceInput(int input) {
+    return input%n;
+}
 
 //modular multiplacation to prevent overflow
 unsigned long modularMultiplacation(unsigned long a, unsigned long b, unsigned long mod) {
@@ -26,7 +31,7 @@ unsigned long modularMultiplacation(unsigned long a, unsigned long b, unsigned l
 
 unsigned long powerMod(unsigned long base, unsigned long exp) {
     unsigned long result = 1;
-    base = base % n; //reduce the base by n
+    // base = base % n; //reduce the base by n
 
     while (exp > 0) {
         if (exp & 1)
@@ -66,35 +71,34 @@ unsigned long computePrivateKey(unsigned long phiN)
 
 unsigned long computePublicKey(unsigned long privateKey, unsigned long phiN)
 {
-    //return modinv(A, M);
-    unsigned long mod = phiN;
-    long y = 0, x = 1;
-    unsigned long qoutent, temp;
+    // Extended Euclidean Algorithm to compute modular inverse
+    long t = 0, newt = 1;
+    long r = phiN, newr = privateKey;
 
-    if (phiN == 1)
-         return 0;
+    while (newr != 0) {
+        long quotient = r / newr;
+        long temp;
 
-    while (privateKey > 1) {
-         // q is quotient
-         qoutent = privateKey / phiN;
-         temp = phiN;
+        // update t
+        temp = newt;
+        newt = t - quotient * newt;
+        t = temp;
 
-        // phiN is remainder now, process same as
-        // Euclid's algo
-        phiN = privateKey % phiN;
-        privateKey = temp;
-        temp = y;
+        // update r
+        temp = newr;
+        newr = r - quotient * newr;
+        r = temp;
+    }
 
-         // Update y and x
-         y = x - qoutent * y;
-         x = temp;
-     }
+    if (r > 1) {
+        // privateKey not invertible modulo phiN
+        return 0;
+    }
 
-     // Make x positive
-     if (x < 0)
-         x += mod;
+    if (t < 0)
+        t += phiN;
 
-     return x;
+    return (unsigned long)t;
 }
 
 #endif

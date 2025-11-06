@@ -8,9 +8,12 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/time.h>
+#include <time.h>
 
 void DieWithError(char *errorMessage);
 
+#define TFA_DEFAULT_IP "127.0.0.1"
+#define TFA_DEFAULT_PORT 5051
 #define RECV_TIMEOUT_MS 2500
 #define MAX_REG_RETRIES 3
 
@@ -22,9 +25,9 @@ static void set_recv_timeout(int servSock, int ms)
     (void)setsockopt(servSock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 }
 
-// static void ip_to_str(struct sockaddr_in *addr, char *buf, size_t len) {
-//     inet_ntop(AF_INET, &(addr->sin_addr), buf, len);
-// }
+static void ip_to_str(struct sockaddr_in *addr, char *buf, size_t len) {
+    inet_ntop(AF_INET, &(addr->sin_addr), buf, len);
+}
 
 int main(int argc, char *argv[])
 {
@@ -45,8 +48,8 @@ int main(int argc, char *argv[])
 
     // setup the ip and ports
     // unsigned int userID = (unsigned int)strtoul(argv[1], NULL, 10);
-    const char *tfaServIP = "127.0.0.1";
-    unsigned short tfaServPort = 5051; // we'll need to change this before it goes to emunix
+    const char *tfaServIP = TFA_DEFAULT_IP;
+    unsigned short tfaServPort = TFA_DEFAULT_PORT; // we'll need to change this before it goes to emunix
     // unsigned short localPort = (unsigned short)strtoul(argv[4], NULL, 10);
 
     /* ---- Socket + bind ---- */
@@ -93,7 +96,7 @@ int main(int argc, char *argv[])
         regPK.userID = userID;
 
         // create digital signature
-        unsigned long nowTs = (unsigned long)time(NULL);
+        unsigned long nowTs = reduceInput((unsigned long)time(NULL));
         regPK.timeStamp = nowTs;
         regPK.digitalSig = rsaEncrypt(nowTs, privateKey);
         ssize_t sent = sendto(servSock, &regPK, sizeof(regPK), 0,

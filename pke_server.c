@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
                     registeredUserIds[count] = req.userID;
                     registeredPublicKeys[count] = req.publicKey;
                     ++count;
-                    printf("[PKE_SERVER] REGISTER user=%u key=0x%X from %s:%hu\n",
+                    printf("[PKE_SERVER] REGISTER user=%u key=0x%u from %s:%hu\n",
                            req.userID, req.publicKey, ip, ntohs(fromAddr.sin_port));
                 } else {
                     /* Table full: keep behavior simple—reject silently or log */
