@@ -1,3 +1,4 @@
 *.o
 lodi_client
 lodi_server
+pke_server

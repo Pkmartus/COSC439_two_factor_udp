@@ -2,7 +2,7 @@ CC = gcc
 
 CFLAGS = -Wall -g
 
-all: lodi_client lodi_server
+all: lodi_client lodi_server pke_server
 
 lodi_client: lodi_client.o DieWithError.o 
 	$(CC) $(CFLAGS) -o lodi_client lodi_client.o DieWithError.o
@@ -15,6 +15,12 @@ lodi_server.o: lodi_server.c
 
 lodi_client.o: lodi_client.c
 	$(CC) $(CFLAGS) -c lodi_client.c
+
+pke_server: pke_server.o DieWithError.o
+	$(CC) $(CFLAGS) -o pke_server pke_server.o DieWithError.o
+
+pke_server.o: pke_server.c
+	$(CC) $(CFLAGS) -c pke_server.c
 
 DieWithError.o: DieWithError.c
 	$(CC) $(CFLAGS) -c DieWithError.c
