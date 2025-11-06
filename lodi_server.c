@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
     {
         // recieve login request from client
 
-        printf("waiting for message from clients \n");
+        printf("[Lodi_Server] Listening on port: %d \n", lodiServerPort);
 
         // set size of in/out parameter
         lodiClientAddrLen = sizeof(lodiClientAddr);
@@ -116,8 +116,6 @@ int main(int argc, char *argv[])
             DieWithError("recvfrom() failed");
 
         // request public key from PKE Server
-
-        // submit users public key to PKE server
 
         // set message values
         memset(&pkeRequest, 0, sizeof(pkeRequest));

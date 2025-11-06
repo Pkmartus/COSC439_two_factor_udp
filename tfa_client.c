@@ -55,19 +55,6 @@ int main(int argc, char *argv[])
     if (servSock < 0)
         DieWithError("socket() failed");
 
-    // //address structure for server not local
-    // struct sockaddr_in tfaServAddr;
-    // memset(&tfaServAddr, 0, sizeof(tfaServAddr));
-    // tfaServAddr.sin_family = AF_INET;
-    // tfaServAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    // tfaServAddr.sin_port = htons(tfaServPort);
-
-    // only the server binds a port to the socket
-    //  if (bind(servSock, (struct sockaddr *)&tfaServAddr, sizeof(tfaServAddr)) < 0)
-    //  {
-    //      DieWithError("bind() failed");
-    //  }
-
     /* ---- TFA server address ---- */
     struct sockaddr_in tfaServAddr;
     memset(&tfaServAddr, 0, sizeof(tfaServAddr));
