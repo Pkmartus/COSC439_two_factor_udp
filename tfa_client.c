@@ -12,8 +12,6 @@
 
 void DieWithError(char *errorMessage);
 
-#define TFA_DEFAULT_IP "127.0.0.1"
-#define TFA_DEFAULT_PORT 5051
 #define RECV_TIMEOUT_MS 2500
 #define MAX_REG_RETRIES 3
 

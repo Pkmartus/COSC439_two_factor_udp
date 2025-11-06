@@ -12,11 +12,6 @@
 
 void DieWithError(char *errorMessage);
 
-#define LODI_DEFAULT_IP "127.0.0.1"
-#define LODI_DEFAULT_PORT 5050
-#define PKE_DEFAULT_IP "127.0.0.1"
-#define PKE_DEFAULT_PORT 5052
-
 int main(int argc, char *argv[]) // argc counts the arguments and argv contains them
 {
     // initialize variables adapted from example code

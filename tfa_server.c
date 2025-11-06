@@ -13,10 +13,6 @@
 
 void DieWithError(char *errorMessage);
 
-#define TFA_DEFAULT_IP "127.0.0.1"
-#define TFA_DEFAULT_PORT 5051
-#define PKE_DEFAULT_IP "127.0.0.1" //will need to change this when we use gcp
-#define PKE_DEFAULT_PORT 5052
 #define MAX_CLIENTS 20
 #define RECV_TIMEOUT_MS 2500
 #define ACK_RETRIES 2  /* how many timeout periods we’ll wait for ackPushTFA */

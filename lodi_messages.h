@@ -2,6 +2,9 @@
 #ifndef LODIMESSAGES_H
 #define LODIMESSAGES_H
 
+#define LODI_DEFAULT_IP "127.0.0.1"
+#define LODI_DEFAULT_PORT 5050
+
 /*sample code from handout*/
 
 //message from Lodi Client to Lodi Server
