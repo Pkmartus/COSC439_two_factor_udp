@@ -106,8 +106,6 @@ int main(int argc, char *argv[])
         }
         else
         {
-            // printf("[TFA_CLIENT] -> registerTFA user=%u ts=%lu sig=%lu to %s:%hu (attempt %d/%d)\n",
-            //        regPK.userID, regPK.timeStamp, regPK.digitalSig, tfaServIP, tfaServPort, attempt, MAX_REG_RETRIES);
             printf("[TFA_CLIENT] -> registerTFA user=%u ts=%lu sig=%lu to %s:%hu\n",
                    regPK.userID, regPK.timeStamp, regPK.digitalSig, tfaServIP, tfaServPort);
         }
@@ -118,19 +116,19 @@ int main(int argc, char *argv[])
         socklen_t fromLen = sizeof(fromAddr);
         ssize_t n = recvfrom(servSock, &confirm, sizeof(confirm), 0,
                              (struct sockaddr *)&fromAddr, &fromLen);
-        // if (n < 0)
-        // {
-        //     if (errno == EAGAIN || errno == EWOULDBLOCK)
-        //     {
-        //         printf("[TFA_CLIENT] (timeout) waiting for confirmTFA, retrying...\n");
-        //         //continue; /* try again */
-        //     }
-        //     else
-        //     {
-        //         perror("[TFA_CLIENT] recvfrom(confirmTFA) failed");
-        //         //continue;
-        //     }
-        // }
+        if (n < 0)
+        {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+            {
+                printf("[TFA_CLIENT] (timeout) waiting for confirmTFA, retrying...\n");
+                //continue; /* try again */
+            }
+            else
+            {
+                perror("[TFA_CLIENT] recvfrom(confirmTFA) failed");
+                //continue;
+            }
+        }
         if ((size_t)n != sizeof(confirm))
         {
             printf("[TFA_CLIENT] Ignoring unexpected size %zd for confirmTFA\n", n);
@@ -193,16 +191,16 @@ int main(int argc, char *argv[])
 
         ssize_t n = recvfrom(servSock, &push, sizeof(push), 0,
                              (struct sockaddr *)&fromAddr, &fromLen);
-        // if (n < 0)
-        // {
-        //     if (errno == EAGAIN || errno == EWOULDBLOCK)
-        //     {
-        //         /* idle wait; keep listening */
-        //         continue;
-        //     }
-        //     perror("[TFA_CLIENT] recvfrom(pushTFA) failed");
-        //     continue;
-        // }
+        if (n < 0)
+        {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+            {
+                /* idle wait; keep listening */
+                continue;
+            }
+            perror("[TFA_CLIENT] recvfrom(pushTFA) failed");
+            continue;
+        }
         if ((size_t)n != sizeof(push))
         {
             printf("[TFA_CLIENT] Ignoring packet of unexpected size: %zd\n", n);
