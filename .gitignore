@@ -1,3 +1,6 @@
 *.o
 lodi_client
 lodi_server
+pke_server
+tfa_client
+tfa_server
