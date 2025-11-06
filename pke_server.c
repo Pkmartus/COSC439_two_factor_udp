@@ -7,10 +7,12 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/time.h>
 
 void DieWithError(char *errorMessage);
 
-#define PKE_DEFAULT_PORT 40001
+#define PKE_DEFAULT_IP "127.0.0.1"
+#define PKE_DEFAULT_PORT 5052
 #define MAX_ENTRIES 20
 #define RECV_TIMEOUT_MS 2500
 
