@@ -15,7 +15,7 @@ void DieWithError(char *errorMessage);
 int main(int argc, char *argv[]) //argc counts the arguments and argv contains them
 {
     //initialize variables adapted from example code
-    struct sockaddr_in fromAddr; //local address
+    struct sockaddr_in fromAddr; //buffer for recieved messages
     unsigned int fromSize; //the size of the address for recvfrom() (may need to change this to be seperate for each server)
     unsigned int userID;
 
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) //argc counts the arguments and argv contains t
         DieWithError("socket() failed");
 
     //register public key with PKE server
-    /*
+
     //submit users public key to PKE server
     //get ip from keyboard
     printf("Enter IP for Primary Key Server: \n");
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) //argc counts the arguments and argv contains t
     if(pkeServAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr)
         DieWithError("Packet from unknown source");
 
-    printf("response recieved from pke server \n");*/
+    printf("response recieved from pke server \n");
 
     //Perform authentication process with Lodi Server
     
