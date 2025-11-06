@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
 
         //send auth request to tfa server
         if (sendto(sock, (void *)&tfaRequest, sizeof(tfaRequest), 0,
-                   (struct sockaddr *)&tfaRequest, sizeof(tfaRequest)) != sizeof(tfaRequest))
+                   (struct sockaddr *)&tfaServAddr, sizeof(tfaServAddr)) != sizeof(tfaRequest))
             DieWithError("sendto tfa server sent a different number of bytes than expected");
 
         //wait for response from TFA server
