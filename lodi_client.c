@@ -50,15 +50,15 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
     // }
 
     // get user ID
-    printf("please enter user ID: \n");
+    printf("[Lodi_Client] Please enter user ID: \n");
     scanf("%u", &userID);
 
     // compute public and private keys
     // private key and public key are flipped from rsa slides. In slides public key encrypts and private key decrypts.
     unsigned int privateKey = computePrivateKey(phiN);
     unsigned int publicKey = computePublicKey(privateKey, phiN);
-    printf("computed private key: %d\n", privateKey);
-    printf("computed public key: %d\n", publicKey);
+    printf("[Lodi_Client] computed private key: %d\n", privateKey);
+    printf("[Lodi_Client]computed public key: %d\n", publicKey);
 
     // Create a datagram/UDP socket
     if ((lodiSock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
     if (sendto(lodiSock, (void *)&registerKeyMessage, sizeof(registerKeyMessage), 0,
                (struct sockaddr *)&pkeServAddr, sizeof(pkeServAddr)) != sizeof(registerKeyMessage))
         DieWithError("sendto() sent a different number of bytes than expected");
-    printf("Register public key: %u with PKE server\n", publicKey);
+    printf("[Lodi_Client] Register public key: %u -> PKE server\n", publicKey);
 
     // recieve acknowlegement from pke server
     fromSize = sizeof(fromAddr);
@@ -108,10 +108,11 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
     // check that response came from correct server
     if (pkeServAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr)
         DieWithError("Packet from unknown source");
-    printf("response recieved from pke server \n");
+    printf("[Lodi_Client] response <- PKE Server user: %u \n", ackRegisterKeyMessage.publicKey);
 
-    printf("enter 1 to continue after tfa is opened\n");
-    scanf("%s");
+    printf("[Lodi_Client] Press enter to continue after tfa is opened\n");
+    getchar();
+    getchar();
 
     // Perform authentication process with Lodi Server
 
@@ -127,7 +128,8 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
     loginMessage.recipientID = 0;
     unsigned long currentTime = reduceInput((long)time(NULL));
     loginMessage.timestamp = currentTime;
-    loginMessage.digitalSig = rsaEncrypt(currentTime, privateKey);
+    unsigned long digitalSig = rsaEncrypt(currentTime, privateKey); 
+    loginMessage.digitalSig = digitalSig;
 
     // set lodi server address structure
     memset(&lodiServAddr, 0, sizeof(lodiServAddr));       // zero out structure
@@ -138,7 +140,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
     // send login request to Lodi Server
     if (sendto(lodiSock, (void *)&loginMessage, sizeof(loginMessage), 0, (struct sockaddr *)&lodiServAddr, sizeof(lodiServAddr)) != sizeof(loginMessage))
         DieWithError("sendto() sent a different number of bytes than expected");
-    printf("sent login message to lodi server\n");
+    printf("[Lodi_Client] Request Login -> User: %d, Current time: %hu, Digital Signature: %hu to lodi server\n", userID, currentTime, digitalSig);
 
     // Recieve the response
     fromSize = sizeof(fromAddr);
@@ -153,11 +155,11 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
     if (lodiServAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr)
         DieWithError("Packet from unknown source");
 
-    printf("response recieved from Lodi server, Login Successful \n");
+    printf("[Lodi_Client] Response -> from Lodi server, Login Successful \n");
 
     int quit = 1;
     while(quit) {
-        printf("press 0 to exit\n");
+        printf("[Lodi Client] press 0 to exit\n");
         scanf("%d", &quit);
     }
 
