@@ -3,7 +3,7 @@
 #define LODIMESSAGES_H
 
 #define LODI_DEFAULT_IP "127.0.0.1"
-#define LODI_DEFAULT_PORT 5050
+#define LODI_DEFAULT_PORT 27745
 
 /*sample code from handout*/
 

@@ -3,7 +3,7 @@
 #define PKEMESSAGES_H
 
 #define PKE_DEFAULT_IP "127.0.0.1"
-#define PKE_DEFAULT_PORT 5052
+#define PKE_DEFAULT_PORT 27747
 
 //Message  to PKE server (renamed PClientToPkServer)
 typedef struct {
