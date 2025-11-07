@@ -1,5 +1,5 @@
 /*lodi_server.c*/
-//Primary Dev Patrick Martus
+// Primary Dev Patrick Martus
 //(most logic based on examples)
 #include "rsa.h"
 #include "tfa_messages.h"
@@ -13,6 +13,8 @@
 #include <unistd.h>
 
 void DieWithError(char *errorMessage);
+
+#define MAX_ENTRIES 20
 
 int main(int argc, char *argv[])
 {
@@ -48,9 +50,8 @@ int main(int argc, char *argv[])
     unsigned int tfaResponseSize;
 
     // currently logged in
-    struct sockaddr_in loggedInCLients[20]; // 20 should be plenty for the number of clients we'll probably have
-    char *userIds[20];
-    int publicKeys[20];
+    // int loggedInCLientIDs[MAX_ENTRIES]; // 20 should be plenty for the number of clients we'll probably have
+    // int numUsers = 0;
 
     lodiServerPort = LODI_DEFAULT_PORT; // first argument is the local port
 
@@ -68,27 +69,11 @@ int main(int argc, char *argv[])
     if (bind(sock, (struct sockaddr *)&lodiServAddr, sizeof(lodiServAddr)) < 0)
         DieWithError("bind() failed");
 
-    // //get ip from keyboard
-    // printf("Enter IP for Primary Key Server: \n");
-    // scanf("%15s", pkeServIP);
-
-    // //get the server port
-    // printf("Enter port for Primary Key Server: \n");
-    // scanf("%hu", &pkeServPort);
-
-    // //get ip from keyboard
-    // printf("Enter IP for Two Factor Server: \n");
-    // scanf("%15s", tfaServIP);
-
-    // //get the server port
-    // printf("Enter port for Two Factor Server: \n");
-    // scanf("%hu", &tfaServPort);
-
-    //setup pke ip and port
+    // setup pke ip and port
     pkeServIP = PKE_DEFAULT_IP;
     pkeServPort = PKE_DEFAULT_PORT;
 
-    //setup tfa ip and port
+    // setup tfa ip and port
     tfaServIP = TFA_DEFAULT_IP;
     tfaServPort = TFA_DEFAULT_PORT;
 
@@ -136,7 +121,7 @@ int main(int argc, char *argv[])
         memset(&pkeResponse, 0, pkeResponseSize); // zero out structure
 
         if ((pkeResponseSize = recvfrom(sock, (void *)&pkeResponse, pkeResponseSize, 0,
-                                   (struct sockaddr *)&fromAddr, &fromSize)) < 0)
+                                        (struct sockaddr *)&fromAddr, &fromSize)) < 0)
             DieWithError("[Lodi_Server] Recieving Public Key from server failed");
 
         // check that response came from correct server
@@ -151,7 +136,6 @@ int main(int argc, char *argv[])
 
         printf("[Lodi_Server] Digital signature verified with public key\n");
 
-        
         // send request to TFA server
 
         // set message values
@@ -167,24 +151,32 @@ int main(int argc, char *argv[])
         tfaServAddr.sin_addr.s_addr = inet_addr(tfaServIP);
         tfaServAddr.sin_port = htons(tfaServPort);
 
-        //send auth request to tfa server
+        // send auth request to tfa server
         if (sendto(sock, (void *)&tfaRequest, sizeof(tfaRequest), 0,
                    (struct sockaddr *)&tfaServAddr, sizeof(tfaServAddr)) != sizeof(tfaRequest))
             DieWithError("[Lodi_Server] sendto tfa server sent a different number of bytes than expected");
         printf("[Lodi_Server] Request -> auth from TFA Server for %d\n", loginRequest.userID);
 
-        //wait for response from TFA server
+        // wait for response from TFA server
         fromSize = sizeof(fromAddr);
         tfaResponseSize = sizeof(tfaResponse);
         memset(&tfaResponse, 0, tfaResponseSize); // zero out structure
 
         if ((tfaResponseSize = recvfrom(sock, (void *)&tfaResponse, tfaResponseSize, 0,
-                                   (struct sockaddr *)&fromAddr, &fromSize)) < 0)
+                                        (struct sockaddr *)&fromAddr, &fromSize)) < 0)
             DieWithError("[Lodi_Server] Two Factor Auth failed");
         printf("[Lodi_Server] Response <- auth recieved from TFA Server for: %d\n", tfaResponse.userID);
-        
-        //send login acknowlegment to client
-        // create message
+
+        // add user logged in clients
+        // if (numUsers < MAX_ENTRIES)
+        // {
+        //     loggedInCLientIDs[numUsers] = loginRequest.userID;
+        //     ++numUsers;
+        //     printf("[Lodi_SERVER] REGISTER user=%u\n", loginRequest.userID);
+        // }
+
+        // send login acknowlegment to client
+        //  create message
         memset(&ackLoginMessage, 0, sizeof(ackLogin));
         ackLoginMessage.messageType = ackLogin;
         ackLoginMessage.userID = loginRequest.userID;
