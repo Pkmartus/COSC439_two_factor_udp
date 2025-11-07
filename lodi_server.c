@@ -1,4 +1,6 @@
 /*lodi_server.c*/
+//Primary Dev Patrick Martus
+//(most logic based on examples)
 #include "rsa.h"
 #include "tfa_messages.h"
 #include "pke_messages.h"
@@ -50,18 +52,11 @@ int main(int argc, char *argv[])
     char *userIds[20];
     int publicKeys[20];
 
-    // check correct number of arguments
-    // if (argc != 2)
-    // {
-    //     fprintf(stderr, "Usage: %s <Lodi Server Port>\n", argv[0]);
-    //     exit(1);
-    // }
-
     lodiServerPort = LODI_DEFAULT_PORT; // first argument is the local port
 
     // Create datagram UDP Socket
     if ((sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
-        DieWithError("socket() fialed");
+        DieWithError("[Lodi_Server] socket() fialed");
 
     // Construct local address structure
     memset(&lodiServAddr, 0, sizeof(lodiServAddr));   // zero out memory
@@ -113,7 +108,8 @@ int main(int argc, char *argv[])
         // block until message recieved (message struct must be cast to void *)
         if ((loginRequestSize = recvfrom(sock, (void *)&loginRequest, loginRequestSize, 0,
                                          (struct sockaddr *)&lodiClientAddr, &lodiClientAddrLen)) < 0)
-            DieWithError("recvfrom() failed");
+            DieWithError("[Lodi_Server] recvfrom() failed");
+        printf("[Lodi_Server] Recieved <- login request from user: %d\n", loginRequest.userID);
 
         // request public key from PKE Server
 
@@ -131,7 +127,8 @@ int main(int argc, char *argv[])
         // send primary key to pke server
         if (sendto(sock, (void *)&pkeRequest, sizeof(pkeRequest), 0,
                    (struct sockaddr *)&pkeServAddr, sizeof(pkeServAddr)) != sizeof(pkeRequest))
-            DieWithError("sendto() pke server sent a different number of bytes than expected");
+            DieWithError("[Lodi_Server] sendto() pke server sent a different number of bytes than expected");
+        printf("[Lodi_Server] Request -> request public key for user: %d\n", loginRequest.userID);
 
         // recieve acknowlegement from pke server
         fromSize = sizeof(fromAddr);
@@ -140,19 +137,19 @@ int main(int argc, char *argv[])
 
         if ((pkeResponseSize = recvfrom(sock, (void *)&pkeResponse, pkeResponseSize, 0,
                                    (struct sockaddr *)&fromAddr, &fromSize)) < 0)
-            DieWithError("Recieving Public Key from server failed");
+            DieWithError("[Lodi_Server] Recieving Public Key from server failed");
 
         // check that response came from correct server
         if (pkeServAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr)
-            DieWithError("Packet from unknown source");
+            DieWithError("[Lodi_Server] Packet from unknown source");
 
-        printf("response recieved from pke server \n");
+        printf("[Lodi_Server] Response <- recieved from pke server key: %d\n", pkeResponse.publicKey);
 
         // decrypt signature using key
         if (rsaDecrypt(loginRequest.digitalSig, pkeResponse.publicKey) != loginRequest.timestamp)
-            DieWithError("Signature doesn't match timestamp");
+            DieWithError("[Lodi_Server] Signature doesn't match timestamp");
 
-        printf("Digital signature verified with public key \n");
+        printf("[Lodi_Server] Digital signature verified with public key\n");
 
         
         // send request to TFA server
@@ -173,7 +170,8 @@ int main(int argc, char *argv[])
         //send auth request to tfa server
         if (sendto(sock, (void *)&tfaRequest, sizeof(tfaRequest), 0,
                    (struct sockaddr *)&tfaServAddr, sizeof(tfaServAddr)) != sizeof(tfaRequest))
-            DieWithError("sendto tfa server sent a different number of bytes than expected");
+            DieWithError("[Lodi_Server] sendto tfa server sent a different number of bytes than expected");
+        printf("[Lodi_Server] Request -> auth from TFA Server for %d\n", loginRequest.userID);
 
         //wait for response from TFA server
         fromSize = sizeof(fromAddr);
@@ -182,7 +180,8 @@ int main(int argc, char *argv[])
 
         if ((tfaResponseSize = recvfrom(sock, (void *)&tfaResponse, tfaResponseSize, 0,
                                    (struct sockaddr *)&fromAddr, &fromSize)) < 0)
-            DieWithError("Two Factor Auth failed");
+            DieWithError("[Lodi_Server] Two Factor Auth failed");
+        printf("[Lodi_Server] Response <- auth recieved from TFA Server for: %d\n", tfaResponse.userID);
         
         //send login acknowlegment to client
         // create message
@@ -194,6 +193,7 @@ int main(int argc, char *argv[])
         // send a message back
         if (sendto(sock, (void *)&ackLoginMessage, ackLoginSize, 0,
                    (struct sockaddr *)&lodiClientAddr, lodiClientAddrLen) != ackLoginSize)
-            DieWithError("Acknowlegement message failed to send");
+            DieWithError("[Lodi_Server] Acknowlegement message failed to send");
+        printf("[Lodi_Server] Response -> to Lodi Client for user: %d\n", loginRequest.userID);
     }
 }

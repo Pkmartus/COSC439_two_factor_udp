@@ -1,4 +1,6 @@
 /*rsa.h*/
+//Primary Dev Patrick Martus
+//(algotithms adapted from examples on geeksforgeeks.org)
 #ifndef RSA_H
 #define RSA_H
 
@@ -56,7 +58,6 @@ unsigned long rsaDecrypt(unsigned long decryption_input, unsigned long publicKey
 unsigned long computePrivateKey(unsigned long phiN)
 {
     //find the largest number that is pairwise prime with phi n
-      // Fallback: search upwards
     for (unsigned long e = 3; e < phiN; e += 2) {
         unsigned long a = e, b = phiN;
         while (b != 0) {
@@ -71,7 +72,7 @@ unsigned long computePrivateKey(unsigned long phiN)
 
 unsigned long computePublicKey(unsigned long privateKey, unsigned long phiN)
 {
-    // Extended Euclidean Algorithm to compute modular inverse
+    //Extended Euclidean Algorithm to find modular inverse
     long t = 0, newt = 1;
     long r = phiN, newr = privateKey;
 
@@ -89,12 +90,6 @@ unsigned long computePublicKey(unsigned long privateKey, unsigned long phiN)
         newr = r - quotient * newr;
         r = temp;
     }
-
-    if (r > 1) {
-        // privateKey not invertible modulo phiN
-        return 0;
-    }
-
     if (t < 0)
         t += phiN;
 

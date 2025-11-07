@@ -1,3 +1,4 @@
+//Primary Dev Chanuth Jayatissa
 #include "tfa_messages.h"
 #include "rsa.h"
 #include <sys/socket.h>
@@ -15,13 +16,6 @@ void DieWithError(char *errorMessage);
 #define RECV_TIMEOUT_MS 2500
 #define MAX_REG_RETRIES 3
 
-static void set_recv_timeout(int servSock, int ms)
-{
-    struct timeval tv;
-    tv.tv_sec = ms / 1000;
-    tv.tv_usec = (ms % 1000) * 1000;
-    (void)setsockopt(servSock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-}
 
 static void ip_to_str(struct sockaddr_in *addr, char *buf, size_t len) {
     inet_ntop(AF_INET, &(addr->sin_addr), buf, len);
@@ -29,26 +23,14 @@ static void ip_to_str(struct sockaddr_in *addr, char *buf, size_t len) {
 
 int main(int argc, char *argv[])
 {
-    // if we're hardcoding ip and port we might not need arguments
-    //  if (argc != 5)
-    //  {
-    //      fprintf(stderr,
-    //              "Usage: %s <userID> <TFA_SERVER_IP> <TFA_SERVER_PORT> <LOCAL_PORT>\n"
-    //              "Example: %s 123 127.0.0.1 40002 41002\n",
-    //              argv[0], argv[0]);
-    //      exit(1);
-    //  }
-
     // get user ID
     unsigned int userID;
     printf("please enter user ID: \n");
     scanf("%u", &userID);
 
     // setup the ip and ports
-    // unsigned int userID = (unsigned int)strtoul(argv[1], NULL, 10);
     const char *tfaServIP = TFA_DEFAULT_IP;
-    unsigned short tfaServPort = TFA_DEFAULT_PORT; // we'll need to change this before it goes to emunix
-    // unsigned short localPort = (unsigned short)strtoul(argv[4], NULL, 10);
+    unsigned short tfaServPort = TFA_DEFAULT_PORT;
 
     /* ---- Socket + bind ---- */
     int servSock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -61,12 +43,8 @@ int main(int argc, char *argv[])
     tfaServAddr.sin_family = AF_INET;
     tfaServAddr.sin_addr.s_addr = inet_addr(tfaServIP);
     tfaServAddr.sin_port = htons(tfaServPort);
-    // if (inet_pton(AF_INET, tfaServIP, &tfaServAddr.sin_addr) != 1)
-    // {
-    //     DieWithError("inet_pton() failed for TFA_SERVER_IP");
-    // }
 
-    printf("[TFA_CLIENT] user=%u TFA server %s:%hu\n", userID, tfaServIP, tfaServPort);
+    printf("[TFA_CLIENT] user=%u TFA server port: %hu\n", userID, tfaServPort);
 
     // /* ---- Compute RSA keys (same style as lodi_client) ---- */
     unsigned int privateKey = computePrivateKey(phiN); // not sure if we should be computing this again here or somehow get it from client but we can worry about that in project 2
@@ -93,8 +71,8 @@ int main(int argc, char *argv[])
         }
         else
         {
-            printf("[TFA_CLIENT] -> registerTFA user=%u ts=%lu sig=%lu to %s:%hu\n",
-                   regPK.userID, regPK.timeStamp, regPK.digitalSig, tfaServIP, tfaServPort);
+            printf("[TFA_CLIENT] -> registerTFA user=%u ts=%lu sig=%lu to port: %hu\n",
+                   regPK.userID, regPK.timeStamp, regPK.digitalSig, tfaServPort);
         }
         /* Wait for confirmTFA */
         TFAServerToTFAClient confirm;
@@ -151,7 +129,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            printf("[TFA_CLIENT] -> ackRegTFA user=%u to %s:%hu\n", userID, tfaServIP, tfaServPort);
+            printf("[TFA_CLIENT] -> ackRegTFA user=%u to port: %hu\n", userID, tfaServPort);
         }
 
         /* Registration complete */
@@ -216,7 +194,7 @@ int main(int argc, char *argv[])
             continue;
         }
 
-        printf("[TFA_CLIENT] <- pushTFA user=%u from %s:%hu\n", push.userID, tfaServIP, tfaServIP);
+        printf("[TFA_CLIENT] <- pushTFA user=%u from port: %d\n", push.userID, tfaServPort);
 
         /* Reply with ackPushTFA */
         TFAClientOrLodiServerToTFAServer ack;
@@ -229,7 +207,7 @@ int main(int argc, char *argv[])
             perror("[TFA_CLIENT] sendto(ackPushTFA) failed");
             continue;
         }
-        printf("[TFA_CLIENT] -> ackPushTFA user=%u to %s:%hu\n", userID, tfaServIP, tfaServPort);
+        printf("[TFA_CLIENT] -> ackPushTFA user=%u to port: %d\n", userID, tfaServPort);
     }
 
     /* not reached */

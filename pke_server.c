@@ -1,3 +1,4 @@
+//Primary Dev Chanuth Jayatissa
 #include "pke_messages.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,8 +12,6 @@
 
 void DieWithError(char *errorMessage);
 
-#define PKE_DEFAULT_IP "127.0.0.1"
-#define PKE_DEFAULT_PORT 5052
 #define MAX_ENTRIES 20
 #define RECV_TIMEOUT_MS 2500
 
@@ -61,7 +60,7 @@ int main(int argc, char *argv[]) {
         DieWithError("bind() failed");
     }
 
-    printf("[PKE_SERVER] Listening on 0.0.0.0:%hu\n", port);
+    printf("[PKE_SERVER] Listening on port: %hu\n", port);
 
     /* In-memory directory */
     unsigned int registeredUserIds[MAX_ENTRIES];
@@ -107,7 +106,7 @@ int main(int argc, char *argv[]) {
                 if (idx >= 0) {
                     unsigned int old = registeredPublicKeys[idx];
                     registeredPublicKeys[idx] = req.publicKey;
-                    printf("[PKE_SERVER] UPDATE user=%u key=0x%X (old=0x%X) from %s:%hu\n",
+                    printf("[PKE_SERVER] UPDATE user=%u key=0x%u (old=0x%u) from %s:%hu\n",
                            req.userID, req.publicKey, old, ip, ntohs(fromAddr.sin_port));
                 } else if (count < MAX_ENTRIES) {
                     registeredUserIds[count] = req.userID;
