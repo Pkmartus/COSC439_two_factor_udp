@@ -30,6 +30,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
     FromPKServer ackRegisterKeyMessage;    // buffer for response from PKE server
     unsigned int ackRegSize;               // size of the ackRegisterKey message
 
+    //todo change to work with tcp
     // Lodi Server variables
     struct sockaddr_in lodiServAddr;            // lodi server address
     unsigned short lodiServPort;                // lodi server port
@@ -75,6 +76,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
         DieWithError("[Lodi_Client] sendto() sent a different number of bytes than expected");
     printf("[Lodi_Client] Register -> public key: %u with PKE server\n", publicKey);
 
+
     // recieve acknowlegement from pke server
     fromSize = sizeof(fromAddr);
     ackRegSize = sizeof(ackRegisterKeyMessage);
@@ -93,6 +95,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
     getchar();
     getchar();
 
+    //TODO change to tcp
     // Perform authentication process with Lodi Server
 
     // set ip for lodi server
@@ -136,8 +139,20 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
 
     printf("[Lodi_Client] Response <- from Lodi server, Login Successful \n");
 
+    //todo expand menu to include menu options.
     int quit = 1;
     while(quit) {
+        //TODO login
+        
+        //TODO post
+
+        //TODO request feed of messages from followed idols
+
+        //TODO follow an idol
+
+        //TODO unfollow an idol
+
+        //TODO logout
         printf("[Lodi Client] press 0 to exit\n");
         scanf("%d", &quit);
     }
