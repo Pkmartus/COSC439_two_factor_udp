@@ -25,6 +25,7 @@ int main(int argc, char *argv[])
     unsigned int fromSize;
     unsigned short lodiServerPort;
 
+    //TODO change to tcp
     // Lodi Client
     struct sockaddr_in lodiClientAddr;          // address
     unsigned int lodiClientAddrLen;             // length of incoming message?
@@ -79,6 +80,8 @@ int main(int argc, char *argv[])
 
     for (;;) // run forever
     {
+        //TODO determine the type of message being sent and respond accordingly
+
         // recieve login request from client
 
         printf("[Lodi_Server] Listening on port: %d \n", lodiServerPort);
@@ -187,5 +190,21 @@ int main(int argc, char *argv[])
                    (struct sockaddr *)&lodiClientAddr, lodiClientAddrLen) != ackLoginSize)
             DieWithError("[Lodi_Server] Acknowlegement message failed to send");
         printf("[Lodi_Server] Response -> to Lodi Client for user: %d\n", loginRequest.userID);
+
+        //TODO ack post
+        //store the post and the idol who posted it
+
+        //TODO ack feed
+        //send messages with how many posts are incoming
+        //send all posts from followed idols
+
+        //TODO ack follow
+        //server should update list of idols the fan is following
+
+        //TODO ack unfollow
+        //server updates the list of idols to remove idol
+
+        //TODO ack logout
+        //server updates logged in users. list of followed idols should stay
     }
 }
