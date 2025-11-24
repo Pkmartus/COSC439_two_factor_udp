@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     unsigned int lodiClientAddrLen;             // length of incoming message?
     PClientToLodiServer loginRequest;           // buffer for login message
     int loginRequestSize;                       // size of login message
-    LodiServerToLodiClientAcks ackLoginMessage; // acknowlegement to be sent to client
+    LodiServerMessage ackLoginMessage; // acknowlegement to be sent to client
     unsigned int ackLoginSize;
 
     // PKE Server

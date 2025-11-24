@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
     unsigned short lodiServPort;                // lodi server port
     char *lodiServIP;                           // ip of lodi server
     PClientToLodiServer loginMessage;           // message to Lodi server
-    LodiServerToLodiClientAcks ackLoginMessage; // buffer for response from lodi server
+    LodiServerMessage ackLoginMessage; // buffer for response from lodi server
     unsigned int ackLoginSize;                  // length of the acknowlegment message
 
     // get user ID
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
     int quit = 1;
     while(quit) {
         //TODO login
-        
+
         //TODO post
 
         //TODO request feed of messages from followed idols
