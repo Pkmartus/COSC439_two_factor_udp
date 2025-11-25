@@ -26,6 +26,17 @@ typedef struct {
     unsigned int next; //my addition, used in ackFeed to send the number of messages coming in the feed. send type feed message after that
 } LodiServerMessage; /* an unsigned int is 32 bits = 4 bytes */
 
+//structure for storing user messages
+typedef struct {
+    unsigned int userID;
+    char message[100];
+} UserMessages;
+
+//structure for keeping track of the idols a fan is following
+typedef struct {
+    unsigned int fan;
+    unsigned int idol;
+} FollowingIdol
 
 
 #endif

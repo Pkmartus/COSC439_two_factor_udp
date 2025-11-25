@@ -27,6 +27,7 @@ int main(int argc, char *argv[])
 
     //TODO change to tcp
     // Lodi Client
+    int clientSock;                             //new to project 2, socket for the lodi client
     struct sockaddr_in lodiClientAddr;          // address
     unsigned int lodiClientAddrLen;             // length of incoming message?
     PClientToLodiServer loginRequest;           // buffer for login message
@@ -78,8 +79,18 @@ int main(int argc, char *argv[])
     tfaServIP = TFA_DEFAULT_IP;
     tfaServPort = TFA_DEFAULT_PORT;
 
+    //Data structures for login
+    unsigned int loggedInUsers[20];
+
+    //keep track of messages each user has sent
+    UserMessages messages[100];
+
+    //keep track of who's following who
+    FollowingIdol following[40];
+
     for (;;) // run forever
     {
+        
         //TODO determine the type of message being sent and respond accordingly
 
         // recieve login request from client
