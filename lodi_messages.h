@@ -36,7 +36,7 @@ typedef struct {
 typedef struct {
     unsigned int fan;
     unsigned int idol;
-} FollowingIdol
+} FollowingIdol;
 
 
 #endif
