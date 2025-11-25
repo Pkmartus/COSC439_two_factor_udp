@@ -13,6 +13,7 @@
 #include <time.h>
 
 void DieWithError(char *errorMessage);
+void serverLogin(int userID, unsigned int privateKey, int tcpSock);
 
 int main(int argc, char *argv[]) // argc counts the arguments and argv contains them
 {
@@ -34,14 +35,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
     //todo change to work with tcp
     int tcpSock;
 
-    // Lodi Server variables
-    struct sockaddr_in lodiServAddr;            // lodi server address
-    unsigned short lodiServPort;                // lodi server port
-    char *lodiServIP;                           // ip of lodi server
-    PClientToLodiServer loginMessage;           // message to Lodi server
-    LodiServerMessage ackBuffer[sizeof(LodiServerMessage)]; // buffer for response from lodi server
-    unsigned int ackLoginSize;                  // length of the acknowlegment message
-    int bytesRcvd, totalBytesRcvd;              //bytes recieved in a single recv() and total bytes recieved
+    
 
     // get user ID
     printf("[Lodi_Client] Please enter user ID: \n");
@@ -95,33 +89,16 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
         DieWithError("[Lodi_Client] Packet from unknown source");
     printf("[Lodi_Client] Response <- PKE Server Public Key: %u\n", ackRegisterKeyMessage.publicKey);
 
+    /* Create a reliable, stream socket using TCP */
+    if ((tcpSock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+        DieWithError("socket() failed");
+
+    //todo new menu negates the need for this most likely
     printf("[Lodi_Client] Press enter to continue after tfa is opened\n");
     getchar();
     getchar();
 
     //TODO change to tcp
-    // Perform authentication process with Lodi Server
-
-    // set ip for lodi server
-    lodiServIP = LODI_DEFAULT_IP;
-    // set server port
-    lodiServPort = LODI_DEFAULT_PORT;
-
-    // // set message varriables
-    // memset(&loginMessage, 0, sizeof(loginMessage));
-    // loginMessage.messageType = login;
-    // loginMessage.userID = userID;
-    // loginMessage.recipientID = 0;
-    // unsigned long currentTime = reduceInput((long)time(NULL));
-    // loginMessage.timestamp = currentTime;
-    // unsigned long digitalSig = rsaEncrypt(currentTime, privateKey); 
-    // loginMessage.digitalSig = digitalSig;
-
-    // set lodi server address structure
-    memset(&lodiServAddr, 0, sizeof(lodiServAddr));       // zero out structure
-    lodiServAddr.sin_family = AF_INET;                    // Internet addr family
-    lodiServAddr.sin_addr.s_addr = inet_addr(lodiServIP); // lodi server ip
-    lodiServAddr.sin_port = htons(lodiServPort);          // lodi server port
 
     // // send login request to Lodi Server
     // if (sendto(udpSock, (void *)&loginMessage, sizeof(loginMessage), 0, (struct sockaddr *)&lodiServAddr, sizeof(lodiServAddr)) != sizeof(loginMessage))
@@ -159,7 +136,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
 
         switch(option) {
             case 1:
-                //TODO login
+                serverLogin(userID, privateKey, tcpSock);
                 break;
             case 2:
                 //TODO post
@@ -188,4 +165,63 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
     // exit
     close(udpSock);
     exit(0);
+}
+
+LodiServerMessage sendMessage(int tcpSock, PClientToLodiServer message) {
+    // Lodi Server variables
+    struct sockaddr_in lodiServAddr;            // lodi server address
+    unsigned short lodiServPort;                // lodi server port
+    char *lodiServIP;                           // ip of lodi server
+    LodiServerMessage ackBuffer;                // buffer for response from lodi server
+    unsigned int ackBufferSize;                  // length of the acknowlegment message
+
+    lodiServIP = LODI_DEFAULT_IP;                         // set ip for lodi server
+    lodiServPort = LODI_DEFAULT_PORT;                     // set server port
+
+    // set lodi server address structure
+    memset(&lodiServAddr, 0, sizeof(lodiServAddr));       // zero out structure
+    lodiServAddr.sin_family = AF_INET;                    // Internet addr family
+    lodiServAddr.sin_addr.s_addr = inet_addr(lodiServIP); // lodi server ip
+    lodiServAddr.sin_port = htons(lodiServPort);          // lodi server port
+
+    static const char *mTypes[] = {"login", "post", "feed", "follow", "unfollow", "logout"}; //allows printing of the message type
+    static const char *ackTypes[] = {"ackLogin", "ackPost", "ackFeed", "ackFollow", "ackUnfollow", "ackLogout", "feedMessage"};
+    int bytesRcvd, totalBytesRcvd;              //bytes recieved in a single recv() and total bytes recieved
+
+    /* Establish the connection to the echo server */
+    if (connect(tcpSock, (struct sockaddr *) &lodiServAddr, sizeof(lodiServAddr)) < 0)
+        DieWithError("connect() failed");
+
+    //send message
+    if (send(tcpSock, &message, sizeof(message), 0) != sizeof(message))
+        DieWithError("send() sent a different number of bytes than expected");
+    printf("[Lodi_Client] Request -> Type: %s User: %d\n", mTypes[message.messageType], message.userID);
+    
+    totalBytesRcvd = 0;
+    while (totalBytesRcvd < sizeof(ackBuffer))
+    {
+        //accumulate up to the buffer size
+        if ((bytesRcvd = recv(tcpSock, ((char *)&ackBuffer) + totalBytesRcvd, sizeof(ackBuffer) - totalBytesRcvd, 0)) <= 0)
+            DieWithError("recv() failed or connection closed prematurely");
+        totalBytesRcvd += bytesRcvd;   /* Keep tally of total bytes */
+    }
+    printf("[Lodi_Client] Response <- Ack Type: %s User: %d\n", ackTypes[ackBuffer.messageType], ackBuffer.userID);
+    return ackBuffer;
+}
+
+void serverLogin(int userID, unsigned int privateKey, int tcpSock) {
+    PClientToLodiServer loginMessage;           // message to send to Lodi server
+    
+    // set message varriables
+    memset(&loginMessage, 0, sizeof(loginMessage));
+    loginMessage.messageType = login;
+    loginMessage.userID = userID;
+    loginMessage.recipientID = 0;
+    unsigned long currentTime = reduceInput((long)time(NULL));
+    loginMessage.timestamp = currentTime;
+    unsigned long digitalSig = rsaEncrypt(currentTime, privateKey); 
+    loginMessage.digitalSig = digitalSig;
+
+    sendMessage(tcpSock, loginMessage);
+    
 }

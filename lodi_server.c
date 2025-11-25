@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 void DieWithError(char *errorMessage);
+PClientToLodiServer recvFromClient(int tcpSock);
 
 #define MAX_ENTRIES 20
 #define MAXPENDING 20 // maximum pending client connections
@@ -21,7 +22,6 @@ int main(int argc, char *argv[])
 {
     // local
     int udpSock; // socket for communicating with tfa and pke server
-    int tcpSock; // socket for communicating with lodi Client
     struct sockaddr_in lodiServAddr;
     struct sockaddr_in fromAddr;
     unsigned int fromSize;
@@ -98,22 +98,23 @@ int main(int argc, char *argv[])
     tfaServAddr.sin_port = htons(tfaServPort);
 
     // create tcp socket for communicating with the client
-    if ((tcpSock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+    if ((lodiClientSock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
         DieWithError("socket() failed");
     printf("[Lodi_Server] TCP socket created\n");
 
     // bind the tcp socket
-    if (bind(tcpSock, (struct sockaddr *)&lodiServAddr, sizeof(lodiServAddr)) < 0)
+    if (bind(lodiClientSock, (struct sockaddr *)&lodiServAddr, sizeof(lodiServAddr)) < 0)
         DieWithError("bind() failed");
     printf("[Lodi_Server] TCP socket bound\n");
 
     // make the tcp socket listen for messages from server
-    if (listen(tcpSock, MAXPENDING) < 0)
+    if (listen(lodiClientSock, MAXPENDING) < 0)
         DieWithError("listen() failed");
     printf("[Lodi_Server] TCP socket listening\n");
 
     for (;;) // run forever
     {
+        printf("[Lodi_Server] Listening on port: %d \n", lodiServerPort);
         // set size of in/out parameter
         lodiClientAddrLen = sizeof(lodiClientAddr);
 
@@ -122,14 +123,18 @@ int main(int argc, char *argv[])
         memset(&lodiClientMsg, 0, lodiClientMsgSize);
 
         // try and accept connection from clients
-        if ((lodiClientSock = accept(tcpSock, (struct sockaddr *)&lodiClientAddr,
+        if ((lodiClientSock = accept(lodiClientSock, (struct sockaddr *)&lodiClientAddr,
                                      &lodiClientAddrLen)) < 0)
             DieWithError("accept() failed");
         printf("[Lodi_Server] Listening on port: %d \n", lodiServerPort);
 
-        if ((lodiClientMsgSize = recv(lodiClientSock, &lodiClientMsg, sizeof(lodiClientMsg), 0)) < 0)
-            DieWithError("recv() failed");
-        printf("[Lodi_Server] Recieved Message from a client");
+        // if ((lodiClientMsgSize = recv(lodiClientSock, &lodiClientMsg, sizeof(lodiClientMsg), 0)) < 0)
+        //     DieWithError("recv() failed");
+
+        //function to accumulate method
+        lodiClientMsg = recvFromClient(lodiClientSock);
+            
+        printf("[Lodi_Server] Recieved Message from a client\n");
 
         // TODO determine the type of message being sent and respond accordingly
         switch (lodiClientMsg.messageType)
@@ -208,32 +213,53 @@ int main(int argc, char *argv[])
                 lodiResponseMsgSize = sizeof(lodiResponseMsg);
 
                 // send a message back
-                if (sendto(udpSock, (void *)&lodiResponseMsg, lodiResponseMsgSize, 0,
-                           (struct sockaddr *)&lodiClientAddr, lodiClientAddrLen) != lodiResponseMsgSize)
+                if (send(lodiClientSock, (void *)&lodiResponseMsg, lodiResponseMsgSize, 0) != lodiResponseMsgSize)
                     DieWithError("[Lodi_Server] Acknowlegement message failed to send");
                 printf("[Lodi_Server] Response -> Ack Login to Lodi Client for user: %d\n", lodiClientMsg.userID);
                 break;
+            case post:
+                // TODO ack post
+                // store the post and the idol who posted it
+                break;
+            case feed:
+                // TODO feed
+                // send messages with how many posts are incoming
+                // send all posts from followed idols
+                break;
+            case follow:
+                // TODO follow
+                // server should update list of idols the fan is following
+                break;
+            case unfollow:
+                // TODO unfollow
+                // server updates the list of idols to remove idol
+                break;
+            case logout:
+                // TODO logout
+                // server updates logged in users. list of followed idols should stay
+                break;
             default:
                 printf("[Lodi_Server] Recieved <- Invalid message type\n");
-                break;
-
-            // TODO ack post
-            // store the post and the idol who posted it
-
-            // TODO ack feed
-            // send messages with how many posts are incoming
-            // send all posts from followed idols
-
-            // TODO ack follow
-            // server should update list of idols the fan is following
-
-            // TODO ack unfollow
-            // server updates the list of idols to remove idol
-
-            // TODO ack logout
-            // server updates logged in users. list of followed idols should stay
+                break;            
         }
-
     
     }
+}
+
+//should be very similar to the recieve portion of sendMessage on the client side
+PClientToLodiServer recvFromClient(int tcpSock) {
+    PClientToLodiServer messageBuffer; //buffer for incomint message
+    int totalBytesRcvd, bytesRcvd;
+
+    totalBytesRcvd = 0;
+    while (totalBytesRcvd < sizeof(messageBuffer))
+    {
+        //accumulate up to the buffer size
+        if ((bytesRcvd = recv(tcpSock, ((char *)&messageBuffer) + totalBytesRcvd, sizeof(messageBuffer) - totalBytesRcvd, 0)) <= 0)
+            DieWithError("recv() failed or connection closed prematurely");
+        totalBytesRcvd += bytesRcvd;   /* Keep tally of total bytes */
+    }
+    //may or may not need to close at the end of this function
+
+    return messageBuffer;
 }
