@@ -15,11 +15,12 @@
 void DieWithError(char *errorMessage);
 
 #define MAX_ENTRIES 20
+#define MAXPENDING 20 //maximum pending client connections
 
 int main(int argc, char *argv[])
 {
     // local
-    int sock; // socket
+    int udpSock; // socket
     struct sockaddr_in lodiServAddr;
     struct sockaddr_in fromAddr;
     unsigned int fromSize;
@@ -27,7 +28,7 @@ int main(int argc, char *argv[])
 
     //TODO change to tcp
     // Lodi Client
-    int clientSock;                             //new to project 2, socket for the lodi client
+    int clientTCPSock;                             //new to project 2, socket for the lodi client
     struct sockaddr_in lodiClientAddr;          // address
     unsigned int lodiClientAddrLen;             // length of incoming message?
     PClientToLodiServer loginRequest;           // buffer for login message
@@ -51,14 +52,10 @@ int main(int argc, char *argv[])
     TFAServerToLodiServer tfaResponse;           // buffer for response from TFA server
     unsigned int tfaResponseSize;
 
-    // currently logged in
-    // int loggedInCLientIDs[MAX_ENTRIES]; // 20 should be plenty for the number of clients we'll probably have
-    // int numUsers = 0;
-
     lodiServerPort = LODI_DEFAULT_PORT; // first argument is the local port
 
     // Create datagram UDP Socket
-    if ((sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
+    if ((udpSock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
         DieWithError("[Lodi_Server] socket() fialed");
 
     // Construct local address structure
@@ -68,7 +65,7 @@ int main(int argc, char *argv[])
     lodiServAddr.sin_port = htons(lodiServerPort);    // local port
 
     // bind socket to local address
-    if (bind(sock, (struct sockaddr *)&lodiServAddr, sizeof(lodiServAddr)) < 0)
+    if (bind(udpSock, (struct sockaddr *)&lodiServAddr, sizeof(lodiServAddr)) < 0)
         DieWithError("bind() failed");
 
     // setup pke ip and port
@@ -78,6 +75,18 @@ int main(int argc, char *argv[])
     // setup tfa ip and port
     tfaServIP = TFA_DEFAULT_IP;
     tfaServPort = TFA_DEFAULT_PORT;
+
+    //create tcp socket for communicating with the client
+    if ((clientTCPSock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+        DieWithError("socket() failed");
+
+    //bind the tcp socket
+    if (bind(clientTCPSock, (struct sockaddr *) &lodiServAddr, sizeof(lodiServAddr)) < 0)
+        DieWithError("bind() failed");
+
+    //make the tcp socket listen for messages from server
+    if (listen(clientTCPSock, MAXPENDING) < 0)
+        DieWithError("listen() failed");
 
     //Data structures for login
     unsigned int loggedInUsers[20];
@@ -90,7 +99,7 @@ int main(int argc, char *argv[])
 
     for (;;) // run forever
     {
-        
+
         //TODO determine the type of message being sent and respond accordingly
 
         // recieve login request from client
@@ -105,7 +114,7 @@ int main(int argc, char *argv[])
         memset(&loginRequest, 0, loginRequestSize);
 
         // block until message recieved (message struct must be cast to void *)
-        if ((loginRequestSize = recvfrom(sock, (void *)&loginRequest, loginRequestSize, 0,
+        if ((loginRequestSize = recvfrom(udpSock, (void *)&loginRequest, loginRequestSize, 0,
                                          (struct sockaddr *)&lodiClientAddr, &lodiClientAddrLen)) < 0)
             DieWithError("[Lodi_Server] recvfrom() failed");
         printf("[Lodi_Server] Recieved <- login request from user: %d\n", loginRequest.userID);
@@ -124,7 +133,7 @@ int main(int argc, char *argv[])
         pkeServAddr.sin_port = htons(pkeServPort);
 
         // send primary key to pke server
-        if (sendto(sock, (void *)&pkeRequest, sizeof(pkeRequest), 0,
+        if (sendto(udpSock, (void *)&pkeRequest, sizeof(pkeRequest), 0,
                    (struct sockaddr *)&pkeServAddr, sizeof(pkeServAddr)) != sizeof(pkeRequest))
             DieWithError("[Lodi_Server] sendto() pke server sent a different number of bytes than expected");
         printf("[Lodi_Server] Request -> request public key for user: %d\n", loginRequest.userID);
@@ -134,7 +143,7 @@ int main(int argc, char *argv[])
         pkeResponseSize = sizeof(pkeResponse);
         memset(&pkeResponse, 0, pkeResponseSize); // zero out structure
 
-        if ((pkeResponseSize = recvfrom(sock, (void *)&pkeResponse, pkeResponseSize, 0,
+        if ((pkeResponseSize = recvfrom(udpSock, (void *)&pkeResponse, pkeResponseSize, 0,
                                         (struct sockaddr *)&fromAddr, &fromSize)) < 0)
             DieWithError("[Lodi_Server] Recieving Public Key from server failed");
 
@@ -166,7 +175,7 @@ int main(int argc, char *argv[])
         tfaServAddr.sin_port = htons(tfaServPort);
 
         // send auth request to tfa server
-        if (sendto(sock, (void *)&tfaRequest, sizeof(tfaRequest), 0,
+        if (sendto(udpSock, (void *)&tfaRequest, sizeof(tfaRequest), 0,
                    (struct sockaddr *)&tfaServAddr, sizeof(tfaServAddr)) != sizeof(tfaRequest))
             DieWithError("[Lodi_Server] sendto tfa server sent a different number of bytes than expected");
         printf("[Lodi_Server] Request -> auth from TFA Server for %d\n", loginRequest.userID);
@@ -176,7 +185,7 @@ int main(int argc, char *argv[])
         tfaResponseSize = sizeof(tfaResponse);
         memset(&tfaResponse, 0, tfaResponseSize); // zero out structure
 
-        if ((tfaResponseSize = recvfrom(sock, (void *)&tfaResponse, tfaResponseSize, 0,
+        if ((tfaResponseSize = recvfrom(udpSock, (void *)&tfaResponse, tfaResponseSize, 0,
                                         (struct sockaddr *)&fromAddr, &fromSize)) < 0)
             DieWithError("[Lodi_Server] Two Factor Auth failed");
         printf("[Lodi_Server] Response <- auth recieved from TFA Server for: %d\n", tfaResponse.userID);
@@ -197,7 +206,7 @@ int main(int argc, char *argv[])
         ackLoginSize = sizeof(ackLoginMessage);
 
         // send a message back
-        if (sendto(sock, (void *)&ackLoginMessage, ackLoginSize, 0,
+        if (sendto(udpSock, (void *)&ackLoginMessage, ackLoginSize, 0,
                    (struct sockaddr *)&lodiClientAddr, lodiClientAddrLen) != ackLoginSize)
             DieWithError("[Lodi_Server] Acknowlegement message failed to send");
         printf("[Lodi_Server] Response -> to Lodi Client for user: %d\n", loginRequest.userID);
