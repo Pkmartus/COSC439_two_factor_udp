@@ -14,6 +14,7 @@
 
 void DieWithError(char *errorMessage);
 PClientToLodiServer recvFromClient(int tcpSock);
+unsigned int findUser(int userID, UserSignInStatus listUsers[], int numUsers);
 
 #define MAX_ENTRIES 20
 #define MAXPENDING 20 // maximum pending client connections
@@ -54,9 +55,11 @@ int main(int argc, char *argv[])
     unsigned int tfaResponseSize;
 
     // Data structures for login
-    unsigned int loggedInUsers[MAX_ENTRIES];
+    UserSignInStatus loggedInUsers[MAX_ENTRIES];
+    unsigned int numUsers = 0; //count of the users kept in loggedIn Users
     UserMessages messages[100];  // keep track of messages each user has sent
-    FollowingIdol following[MAX_ENTRIES*MAX_ENTRIES]; // keep track of who's following who
+    unsigned int numMessages = 0; //number of messages in list
+    // FollowingIdol following[MAX_ENTRIES*MAX_ENTRIES]; // keep track of who's following who
 
     lodiServerPort = LODI_DEFAULT_PORT; // first argument is the local port
 
@@ -70,12 +73,6 @@ int main(int argc, char *argv[])
     lodiServAddr.sin_family = AF_INET;                // internet address family
     lodiServAddr.sin_addr.s_addr = htonl(INADDR_ANY); // any incoming interfaces
     lodiServAddr.sin_port = htons(lodiServerPort);    // local port
-
-    // // bind socket to local address
-    // if (bind(udpSock, (struct sockaddr *)&lodiServAddr, sizeof(lodiServAddr)) < 0)
-    //     DieWithError("bind() failed");
-
-    // printf("[Lodi_Server] UDP Socket bound\n");
 
     // setup pke ip and port
     pkeServIP = PKE_DEFAULT_IP;
@@ -111,6 +108,7 @@ int main(int argc, char *argv[])
     if (listen(lodiClientSock, MAXPENDING) < 0)
         DieWithError("listen() failed");
     printf("[Lodi_Server] TCP socket listening\n");
+
 
     for (;;) // run forever
     {
@@ -197,13 +195,26 @@ int main(int argc, char *argv[])
                     DieWithError("[Lodi_Server] Two Factor Auth failed");
                 printf("[Lodi_Server] Response <- auth recieved from TFA Server for: %d\n", tfaResponse.userID);
 
-                // add user logged in clients
-                // if (numUsers < MAX_ENTRIES)
-                // {
-                //     loggedInCLientIDs[numUsers] = loginRequest.userID;
-                //     ++numUsers;
-                //     printf("[Lodi_SERVER] REGISTER user=%u\n", loginRequest.userID);
-                // }
+                //add user logged in clients
+                unsigned int userIndex;
+                if (numUsers < MAX_ENTRIES)
+                {
+                    //if user has logged in before log them back in
+                    if((userIndex = findUser(lodiClientMsg.userID, loggedInUsers, numUsers)) >= 0){
+                        loggedInUsers[userIndex].signedIn = 1;
+                        printf("[Lodi_Server] user: %d signed back in\n", loggedInUsers[userIndex].userID);
+                    } else { //if not create a new user and add it to the list
+                        UserSignInStatus newuser;
+                        memset(&newuser, 0, sizeof(UserSignInStatus));
+                        newuser.userID = lodiClientMsg.userID;
+                        newuser.signedIn = 1;
+                        loggedInUsers[numUsers] = newuser;
+                        ++numUsers;
+                        printf("[Lodi_Server] REGISTER user=%u\n", lodiClientMsg.userID);
+                    }
+                } else {
+                    DieWithError("[Lodi_Server] List of users is full");
+                }
 
                 // send login acknowlegment to client
                 //  create message
@@ -262,4 +273,14 @@ PClientToLodiServer recvFromClient(int tcpSock) {
     //may or may not need to close at the end of this function
 
     return messageBuffer;
+}
+
+unsigned int findUser(int userID, UserSignInStatus listUsers[], int numUsers) {
+    for(int i = 0; i < numUsers; i++) {
+        if(userID == listUsers[i].userID)
+        {
+            return i;
+        }
+    }
+    return -1;
 }
