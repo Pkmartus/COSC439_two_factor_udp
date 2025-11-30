@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
 
     //todo change to work with tcp
     int tcpSock;
+    int loggedIn; //boolean value for whether or not the usser is currently logged in.
 
     
 
@@ -94,9 +95,9 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
         DieWithError("socket() failed");
 
     //todo new menu negates the need for this most likely
-    printf("[Lodi_Client] Press enter to continue after tfa is opened\n");
-    getchar();
-    getchar();
+    // printf("[Lodi_Client] Press enter to continue after tfa is opened\n");
+    // getchar();
+    // getchar();
 
     //TODO change to tcp
 
@@ -121,45 +122,60 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
     // printf("[Lodi_Client] Response <- from Lodi server, Login Successful \n");
 
     //todo expand menu to include menu options.
+    loggedIn = 0; //initialize login value to false
     int option = 9; //default to 9 because it's not an option on the list
     while(option) {
         printf("[Lodi Client] select an option:\n");
-        printf("1. Login\n");
-        printf("2. Make Post\n");
-        printf("3. Request Feed\n");
-        printf("4. Follow an Idol\n");
-        printf("5. Unfollow an Idol\n");
-        printf("6. Logout\n");
-        printf("0. Quit\n");
+        if (loggedIn) {
+            printf("1. Make Post\n");
+            printf("2. Request Feed\n");
+            printf("3. Follow an Idol\n");
+            printf("4. Unfollow an Idol\n");
+            printf("5. Logout\n");
+            printf("0. Quit\n");
 
-        scanf("%d", &option);
+            scanf("%d", &option);
 
-        switch(option) {
-            case 1:
-                serverLogin(userID, privateKey, tcpSock);
-                break;
-            case 2:
-                //TODO post
-                break;
-            case 3:
-                //TODO request feed of messages from followed idols
-                break;
-            case 4:
-                //TODO follow an idol
-                break;
-            case 5:
-                //TODO unfollow an idol
-                break;
-            case 6:
-                //TODO logout
-                break;
-            case 0:
-                //TODO Quit
-                //should logout as well
-                break;
-            default:
-                printf("[Lodi Client] invalid output try again");
+            switch(option) {
+                case 1:
+                    //TODO post
+                    break;
+                case 2:
+                    //TODO request feed of messages from followed idols
+                    break;
+                case 3:
+                    //TODO follow an idol
+                    break;
+                case 4:
+                    //TODO unfollow an idol
+                    break;
+                case 5:
+                    serverLogout(userID, tcpSock);
+                    loggedIn = 0;
+                    break;
+                case 0:
+                    serverLogout(userID, tcpSock);
+                    break;
+                default:
+                    printf("[Lodi Client] invalid output try again");
+            }
+        } else {
+            printf("1. Login\n");
+            printf("0. Quit\n");
+
+            scanf("%d", &option);
+
+            switch(option) {
+                case 1: //login
+                    serverLogin(userID, privateKey, tcpSock);
+                    loggedIn = 1;
+                    break;
+                case 0:
+                    break;
+            }
         }
+
+        
     }
 
     // exit
@@ -223,5 +239,14 @@ void serverLogin(int userID, unsigned int privateKey, int tcpSock) {
     loginMessage.digitalSig = digitalSig;
 
     sendMessage(tcpSock, loginMessage);
-    
+}
+
+void serverLogout(int userID, int tcpSock) {
+    PClientToLodiServer logoutMessage;
+
+    memset(&logoutMessage, 0, sizeof(logoutMessage));
+    logoutMessage.messageType = logout;
+    logoutMessage.userID = userID;
+
+    sendMessage(tcpSock, logoutMessage);
 }

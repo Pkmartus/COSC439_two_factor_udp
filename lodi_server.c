@@ -14,7 +14,7 @@
 
 void DieWithError(char *errorMessage);
 PClientToLodiServer recvFromClient(int tcpSock);
-unsigned int findUser(int userID, UserSignInStatus listUsers[], int numUsers);
+int findUser(int userID, UserSignInStatus listUsers[], int numUsers);
 
 #define MAX_ENTRIES 20
 #define MAXPENDING 20 // maximum pending client connections
@@ -30,7 +30,8 @@ int main(int argc, char *argv[])
 
     // TODO change to tcp
     //  Lodi Client
-    int lodiClientSock;                // new to project 2, socket for the lodi client
+    int listenForClientSock;
+    int connectToClientSock;                // new to project 2, socket for the lodi client
     struct sockaddr_in lodiClientAddr; // address
     unsigned int lodiClientAddrLen;    // length of address
     PClientToLodiServer lodiClientMsg; // buffer for client message
@@ -95,17 +96,17 @@ int main(int argc, char *argv[])
     tfaServAddr.sin_port = htons(tfaServPort);
 
     // create tcp socket for communicating with the client
-    if ((lodiClientSock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+    if ((listenForClientSock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
         DieWithError("socket() failed");
     printf("[Lodi_Server] TCP socket created\n");
 
     // bind the tcp socket
-    if (bind(lodiClientSock, (struct sockaddr *)&lodiServAddr, sizeof(lodiServAddr)) < 0)
+    if (bind(listenForClientSock, (struct sockaddr *)&lodiServAddr, sizeof(lodiServAddr)) < 0)
         DieWithError("bind() failed");
     printf("[Lodi_Server] TCP socket bound\n");
 
     // make the tcp socket listen for messages from server
-    if (listen(lodiClientSock, MAXPENDING) < 0)
+    if (listen(listenForClientSock, MAXPENDING) < 0)
         DieWithError("listen() failed");
     printf("[Lodi_Server] TCP socket listening\n");
 
@@ -121,7 +122,7 @@ int main(int argc, char *argv[])
         memset(&lodiClientMsg, 0, lodiClientMsgSize);
 
         // try and accept connection from clients
-        if ((lodiClientSock = accept(lodiClientSock, (struct sockaddr *)&lodiClientAddr,
+        if ((connectToClientSock = accept(listenForClientSock, (struct sockaddr *)&lodiClientAddr,
                                      &lodiClientAddrLen)) < 0)
             DieWithError("accept() failed");
         printf("[Lodi_Server] Listening on port: %d \n", lodiServerPort);
@@ -130,9 +131,9 @@ int main(int argc, char *argv[])
         //     DieWithError("recv() failed");
 
         //function to accumulate method
-        lodiClientMsg = recvFromClient(lodiClientSock);
+        lodiClientMsg = recvFromClient(connectToClientSock);
             
-        printf("[Lodi_Server] Recieved Message from a client\n");
+        printf("[Lodi_Server] Recieved <- Message from a client\n");
 
         // TODO determine the type of message being sent and respond accordingly
         switch (lodiClientMsg.messageType)
@@ -196,7 +197,7 @@ int main(int argc, char *argv[])
                 printf("[Lodi_Server] Response <- auth recieved from TFA Server for: %d\n", tfaResponse.userID);
 
                 //add user logged in clients
-                unsigned int userIndex;
+                int userIndex;
                 if (numUsers < MAX_ENTRIES)
                 {
                     //if user has logged in before log them back in
@@ -210,7 +211,8 @@ int main(int argc, char *argv[])
                         newuser.signedIn = 1;
                         loggedInUsers[numUsers] = newuser;
                         ++numUsers;
-                        printf("[Lodi_Server] REGISTER user=%u\n", lodiClientMsg.userID);
+                        //verify that the user is now logged in
+                        printf("[Lodi_Server] REGISTER user=%u\n", loggedInUsers[findUser(lodiClientMsg.userID, loggedInUsers, numUsers)].userID);
                     }
                 } else {
                     DieWithError("[Lodi_Server] List of users is full");
@@ -218,13 +220,13 @@ int main(int argc, char *argv[])
 
                 // send login acknowlegment to client
                 //  create message
-                memset(&lodiResponseMsg, 0, sizeof(ackLogin));
+                memset(&lodiResponseMsg, 0, sizeof(lodiResponseMsg));
                 lodiResponseMsg.messageType = ackLogin;
                 lodiResponseMsg.userID = lodiClientMsg.userID;
                 lodiResponseMsgSize = sizeof(lodiResponseMsg);
 
                 // send a message back
-                if (send(lodiClientSock, (void *)&lodiResponseMsg, lodiResponseMsgSize, 0) != lodiResponseMsgSize)
+                if (send(connectToClientSock, (void *)&lodiResponseMsg, lodiResponseMsgSize, 0) != lodiResponseMsgSize)
                     DieWithError("[Lodi_Server] Acknowlegement message failed to send");
                 printf("[Lodi_Server] Response -> Ack Login to Lodi Client for user: %d\n", lodiClientMsg.userID);
                 break;
@@ -248,12 +250,32 @@ int main(int argc, char *argv[])
             case logout:
                 // TODO logout
                 // server updates logged in users. list of followed idols should stay
+                int userIndex;
+                if((userIndex = findUser(lodiClientMsg.userID, loggedInUsers, numUsers)) >= 0) {
+                    //set logged in status to false
+                    loggedInUsers[userIndex].signedIn = 0;
+                    printf("[Lodi_Server] User: %d Logged out\n", lodiClientMsg.userID);
+                    
+                    // send logout acknowlegment to client
+                    //  create message
+                    memset(&lodiResponseMsg, 0, sizeof(lodiResponseMsg));
+                    lodiResponseMsg.messageType = ackLogout;
+                    lodiResponseMsg.userID = lodiClientMsg.userID;
+                    lodiResponseMsgSize = sizeof(lodiResponseMsg);
+
+                    // send a message back
+                    if (send(connectToClientSock, (void *)&lodiResponseMsg, lodiResponseMsgSize, 0) != lodiResponseMsgSize)
+                        DieWithError("[Lodi_Server] Acknowlegement message failed to send");
+                    printf("[Lodi_Server] Response -> Ack Lougout to Lodi Client for user: %d\n", lodiClientMsg.userID);
+                } else {
+                    printf("[Lodi_Server] User to be logged out not found\n")
+                }
                 break;
             default:
                 printf("[Lodi_Server] Recieved <- Invalid message type\n");
                 break;            
         }
-    
+        printLoggedInUsers(loggedInUsers, numUsers);
     }
 }
 
@@ -275,7 +297,7 @@ PClientToLodiServer recvFromClient(int tcpSock) {
     return messageBuffer;
 }
 
-unsigned int findUser(int userID, UserSignInStatus listUsers[], int numUsers) {
+int findUser(int userID, UserSignInStatus listUsers[], int numUsers) {
     for(int i = 0; i < numUsers; i++) {
         if(userID == listUsers[i].userID)
         {
@@ -283,4 +305,13 @@ unsigned int findUser(int userID, UserSignInStatus listUsers[], int numUsers) {
         }
     }
     return -1;
+}
+
+//print out all users currently signed in
+void printLoggedInUsers(UserSignInStatus usersList[], int numUsers) {
+    for (int i = 0; i < numUsers; i ++)
+    {
+        if (usersList[i].signedIn)
+            printf("ID: %d\n", usersList[i].userID);
+    }
 }
