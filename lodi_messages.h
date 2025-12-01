@@ -40,11 +40,5 @@ typedef struct {
     char message[100];
 } UserMessages;
 
-// //structure for keeping track of the idols a fan is following
-// typedef struct {
-//     unsigned int fan;
-//     unsigned int idol;
-// } FollowingIdol;
-
 
 #endif
