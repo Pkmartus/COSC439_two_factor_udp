@@ -15,6 +15,7 @@
 void DieWithError(char *errorMessage);
 PClientToLodiServer recvFromClient(int tcpSock);
 int findUser(int userID, UserSignInStatus listUsers[], int numUsers);
+void printLoggedInUsers(UserSignInStatus usersList[], int numUsers);
 
 #define MAX_ENTRIES 20
 #define MAXPENDING 20 // maximum pending client connections
@@ -28,7 +29,6 @@ int main(int argc, char *argv[])
     unsigned int fromSize;
     unsigned short lodiServerPort;
 
-    // TODO change to tcp
     //  Lodi Client
     int listenForClientSock;
     int connectToClientSock;                // new to project 2, socket for the lodi client
@@ -135,7 +135,8 @@ int main(int argc, char *argv[])
             
         printf("[Lodi_Server] Recieved <- Message from a client\n");
 
-        // TODO determine the type of message being sent and respond accordingly
+        //determine the type of message being sent and respond accordingly
+        int userIndex;
         switch (lodiClientMsg.messageType)
         {
             case login:
@@ -197,7 +198,6 @@ int main(int argc, char *argv[])
                 printf("[Lodi_Server] Response <- auth recieved from TFA Server for: %d\n", tfaResponse.userID);
 
                 //add user logged in clients
-                int userIndex;
                 if (numUsers < MAX_ENTRIES)
                 {
                     //if user has logged in before log them back in
@@ -248,9 +248,8 @@ int main(int argc, char *argv[])
                 // server updates the list of idols to remove idol
                 break;
             case logout:
-                // TODO logout
-                // server updates logged in users. list of followed idols should stay
-                int userIndex;
+                //logout
+                //server updates logged in users. list of followed idols should stay
                 if((userIndex = findUser(lodiClientMsg.userID, loggedInUsers, numUsers)) >= 0) {
                     //set logged in status to false
                     loggedInUsers[userIndex].signedIn = 0;
@@ -268,13 +267,14 @@ int main(int argc, char *argv[])
                         DieWithError("[Lodi_Server] Acknowlegement message failed to send");
                     printf("[Lodi_Server] Response -> Ack Lougout to Lodi Client for user: %d\n", lodiClientMsg.userID);
                 } else {
-                    printf("[Lodi_Server] User to be logged out not found\n")
+                    printf("[Lodi_Server] User to be logged out not found\n");
                 }
                 break;
             default:
                 printf("[Lodi_Server] Recieved <- Invalid message type\n");
                 break;            
         }
+        close(connectToClientSock);
         printLoggedInUsers(loggedInUsers, numUsers);
     }
 }
@@ -309,9 +309,13 @@ int findUser(int userID, UserSignInStatus listUsers[], int numUsers) {
 
 //print out all users currently signed in
 void printLoggedInUsers(UserSignInStatus usersList[], int numUsers) {
+    printf("[Lodi_Server] currently logged in users:\n");
     for (int i = 0; i < numUsers; i ++)
     {
+        printf("ID: %d logged in:", usersList[i].userID);
         if (usersList[i].signedIn)
-            printf("ID: %d\n", usersList[i].userID);
+            printf("yes\n");
+        else
+            printf("no\n");            
     }
 }

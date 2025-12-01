@@ -14,6 +14,7 @@
 
 void DieWithError(char *errorMessage);
 void serverLogin(int userID, unsigned int privateKey, int tcpSock);
+void serverLogout(int userID, int tcpSock);
 
 int main(int argc, char *argv[]) // argc counts the arguments and argv contains them
 {
@@ -32,7 +33,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
     FromPKServer ackRegisterKeyMessage;    // buffer for response from PKE server
     unsigned int ackRegSize;               // size of the ackRegisterKey message
 
-    //todo change to work with tcp
+    //change to work with tcp
     int tcpSock;
     int loggedIn; //boolean value for whether or not the usser is currently logged in.
 
@@ -90,38 +91,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
         DieWithError("[Lodi_Client] Packet from unknown source");
     printf("[Lodi_Client] Response <- PKE Server Public Key: %u\n", ackRegisterKeyMessage.publicKey);
 
-    /* Create a reliable, stream socket using TCP */
-    if ((tcpSock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
-        DieWithError("socket() failed");
-
-    //todo new menu negates the need for this most likely
-    // printf("[Lodi_Client] Press enter to continue after tfa is opened\n");
-    // getchar();
-    // getchar();
-
-    //TODO change to tcp
-
-    // // send login request to Lodi Server
-    // if (sendto(udpSock, (void *)&loginMessage, sizeof(loginMessage), 0, (struct sockaddr *)&lodiServAddr, sizeof(lodiServAddr)) != sizeof(loginMessage))
-    //     DieWithError("[Lodi_Client] sendto() sent a different number of bytes than expected");
-    // printf("[Lodi_Client] Request -> Login User: %u, Current time: %lu, Digital Signature: %lu to lodi server\n", userID, currentTime, digitalSig);
-
-    // // Recieve the response
-    // fromSizeUdp = sizeof(fromAddrUdp);
-    // ackLoginSize = sizeof(ackBuffer);
-    // memset(&ackBuffer, 0, ackLoginSize); // zero out structure
-
-    // if ((ackLoginSize = recvfrom(udpSock, (void *)&ackBuffer, ackLoginSize, 0,
-    //                              (struct sockaddr *)&fromAddrUdp, &fromSizeUdp)) < 0)
-    //     DieWithError("[Lodi_Client] Login Acknowlegement from the server failed.");
-
-    // // check that response came from correct server
-    // if (lodiServAddr.sin_addr.s_addr != fromAddrUdp.sin_addr.s_addr)
-    //     DieWithError("[Lodi_Client] Packet from unknown source");
-
-    // printf("[Lodi_Client] Response <- from Lodi server, Login Successful \n");
-
-    //todo expand menu to include menu options.
+    //expanded menu to include menu options.
     loggedIn = 0; //initialize login value to false
     int option = 9; //default to 9 because it's not an option on the list
     while(option) {
@@ -204,6 +174,10 @@ LodiServerMessage sendMessage(int tcpSock, PClientToLodiServer message) {
     static const char *ackTypes[] = {"ackLogin", "ackPost", "ackFeed", "ackFollow", "ackUnfollow", "ackLogout", "feedMessage"};
     int bytesRcvd, totalBytesRcvd;              //bytes recieved in a single recv() and total bytes recieved
 
+    /* Create a reliable, stream socket using TCP */
+    if ((tcpSock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+        DieWithError("socket() failed");
+
     /* Establish the connection to the echo server */
     if (connect(tcpSock, (struct sockaddr *) &lodiServAddr, sizeof(lodiServAddr)) < 0)
         DieWithError("connect() failed");
@@ -222,6 +196,9 @@ LodiServerMessage sendMessage(int tcpSock, PClientToLodiServer message) {
         totalBytesRcvd += bytesRcvd;   /* Keep tally of total bytes */
     }
     printf("[Lodi_Client] Response <- Ack Type: %s User: %d\n", ackTypes[ackBuffer.messageType], ackBuffer.userID);
+
+    //close connection
+    close(tcpSock); 
     return ackBuffer;
 }
 
