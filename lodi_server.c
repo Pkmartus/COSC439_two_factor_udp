@@ -268,8 +268,30 @@ int main(int argc, char *argv[])
             getFeed(lodiClientMsg.userID);
 
             // send message with how many posts are incoming
+            memset(&lodiResponseMsg, 0, sizeof(lodiResponseMsg));
+            lodiResponseMsg.messageType = ackFeed;
+            lodiResponseMsg.userID = lodiClientMsg.userID;
+            lodiResponseMsg.next = numInFeed;
+            sprintf(lodiResponseMsg.message, "feed with %d posts\n", numInFeed);
+            lodiResponseMsgSize = sizeof(lodiResponseMsg);
+
+            if (send(connectToClientSock, (void *)&lodiResponseMsg, lodiResponseMsgSize, 0) != lodiResponseMsgSize)
+                DieWithError("[Lodi_Server] Acknowlegement message failed to send");
+            printf("[Lodi_Server] Response -> Ack Feed: %s to Lodi Client for user: %d\n", lodiResponseMsg.message, lodiClientMsg.userID);
 
             // send all posts from followed idols
+            for (int i = 0; i < numInFeed; i++)
+            {
+                memset(&lodiResponseMsg, 0, sizeof(lodiResponseMsg));
+                lodiResponseMsg.messageType = feedMessage;
+                lodiResponseMsg.userID = userFeed[i].userID;
+                sprintf(lodiResponseMsg.message, "%s", userFeed[i].message);
+                lodiResponseMsgSize = sizeof(lodiResponseMsg);
+
+                if (send(connectToClientSock, (void *)&lodiResponseMsg, lodiResponseMsgSize, 0) != lodiResponseMsgSize)
+                    DieWithError("[Lodi_Server] post failed to send");
+                printf("[Lodi_Server] Post -> From User: %d Message: %s\n", lodiResponseMsg.userID, lodiResponseMsg.message);
+            }
             break;
         case follow:
             // follow
@@ -440,19 +462,21 @@ void printLoggedInUsers(UserSignInStatus usersList[], int numUsers)
 
 void getFeed(int userID)
 {
-    //zero out buffers
+    // zero out buffers
     numInFeed = 0;
     memset(userFeed, 0, sizeof(userFeed));
     UserSignInStatus user = loggedInUsers[findUser(userID)];
 
-    //for each idol user is following find their messages
-    for(int i = 0; i < user.numIdols; i++) {
-        for (int j = 0; j < numMessages; j++) {
-            if(messages[j].userID == user.folllowedIdolIDs[i])
+    // for each idol user is following find their messages
+    for (int i = 0; i < user.numIdols; i++)
+    {
+        for (int j = 0; j < numMessages; j++)
+        {
+            if (messages[j].userID == user.folllowedIdolIDs[i])
             {
                 userFeed[numInFeed] = messages[j];
                 numInFeed++;
             }
-        } 
+        }
     }
 }
