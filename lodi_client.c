@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
                 makePost(userID);
                 break;
             case 2:
-                //request feed of messages from followed idols
+                // request feed of messages from followed idols
                 feedRequest(userID);
                 break;
             case 3:
@@ -205,22 +205,23 @@ LodiServerMessage sendMessage(PClientToLodiServer message)
     }
     printf("[Lodi_Client] Response <- Ack Type: %s User: %d message %s\n", ackTypes[ackBuffer.messageType], ackBuffer.userID, ackBuffer.message);
 
-    if (ackBuffer.messageType == ackFeed) {
-    LodiServerMessage feedBuffer;
-    int totalBytesRcvd, bytesRcvd;
-    for (int i = 0; i < ackBuffer.next; i++)
+    if (ackBuffer.messageType == ackFeed)
     {
-        memset(&feedBuffer, 0, sizeof(feedBuffer));
-        totalBytesRcvd = 0;
-        while (totalBytesRcvd < sizeof(feedBuffer))
+        LodiServerMessage feedBuffer;
+        int totalBytesRcvd, bytesRcvd;
+        for (int i = 0; i < ackBuffer.next; i++)
         {
-            // accumulate up to the buffer size
-            if ((bytesRcvd = recv(tcpSock, ((char *)&feedBuffer) + totalBytesRcvd, sizeof(feedBuffer) - totalBytesRcvd, 0)) <= 0)
-                DieWithError("recv() failed or connection closed prematurely");
-            totalBytesRcvd += bytesRcvd; /* Keep tally of total bytes */
+            memset(&feedBuffer, 0, sizeof(feedBuffer));
+            totalBytesRcvd = 0;
+            while (totalBytesRcvd < sizeof(feedBuffer))
+            {
+                // accumulate up to the buffer size
+                if ((bytesRcvd = recv(tcpSock, ((char *)&feedBuffer) + totalBytesRcvd, sizeof(feedBuffer) - totalBytesRcvd, 0)) <= 0)
+                    DieWithError("recv() failed or connection closed prematurely");
+                totalBytesRcvd += bytesRcvd; /* Keep tally of total bytes */
+            }
+            printf("Idol: %u Message: %s\n", feedBuffer.userID, feedBuffer.message);
         }
-        printf("Idol: %u Message: %s\n", feedBuffer.userID, feedBuffer.message);
-    }
     }
 
     // close connection

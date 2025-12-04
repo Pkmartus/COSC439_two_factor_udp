@@ -3,7 +3,7 @@
 #define TFAMESSAGES_H
 
 #define TFA_DEFAULT_IP "35.238.71.225"
-#define TFA_DEFAULT_PORT 27746
+#define TFA_DEFAULT_PORT 8080
 
 /* sample code from handout */
 typedef struct {
