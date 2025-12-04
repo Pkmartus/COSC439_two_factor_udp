@@ -13,11 +13,11 @@
 #include <time.h>
 
 void DieWithError(char *errorMessage);
-void serverLogin(int userID, unsigned int privateKey);
-void serverLogout(int userID);
-void makePost(int userID);
-void followRequest(int userID);
-void unfollowRequest(int userID);
+void serverLogin(int userID, unsigned int privateKey, int tcpSock);
+void serverLogout(int userID, int tcpSock);
+void makePost(int userID, int tcpSock);
+void followRequest(int userID, int tcpSock);
+void unfollowRequest(int userID, int tcpSock);
 
 int main(int argc, char *argv[]) // argc counts the arguments and argv contains them
 {
@@ -37,6 +37,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
     unsigned int ackRegSize;               // size of the ackRegisterKey message
 
     //change to work with tcp
+    int tcpSock;
     int loggedIn; //boolean value for whether or not the usser is currently logged in.
 
     
@@ -110,23 +111,23 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
 
             switch(option) {
                 case 1:
-                    makePost(userID);
+                    makePost(userID, tcpSock);
                     break;
                 case 2:
                     //TODO request feed of messages from followed idols
                     break;
                 case 3:
-                    followRequest(userID);
+                    followRequest(userID, tcpSock);
                     break;
                 case 4:
-                    unfollowRequest(userID);
+                    unfollowRequest(userID, tcpSock);
                     break;
                 case 5:
-                    serverLogout(userID);
+                    serverLogout(userID, tcpSock);
                     loggedIn = 0;
                     break;
                 case 0:
-                    serverLogout(userID);
+                    serverLogout(userID, tcpSock);
                     break;
                 default:
                     printf("[Lodi Client] invalid output try again");
@@ -139,7 +140,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
 
             switch(option) {
                 case 1: //login
-                    serverLogin(userID, privateKey);
+                    serverLogin(userID, privateKey, tcpSock);
                     loggedIn = 1;
                     break;
                 case 0:
@@ -155,8 +156,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
     exit(0);
 }
 
-LodiServerMessage sendMessage(PClientToLodiServer message) {
-    int tcpSock;
+LodiServerMessage sendMessage(PClientToLodiServer message, int tcpSock) {
 
     // Lodi Server variables
     struct sockaddr_in lodiServAddr;            // lodi server address
@@ -200,13 +200,11 @@ LodiServerMessage sendMessage(PClientToLodiServer message) {
         totalBytesRcvd += bytesRcvd;   /* Keep tally of total bytes */
     }
     printf("[Lodi_Client] Response <- Ack Type: %s User: %d message %s\n", ackTypes[ackBuffer.messageType], ackBuffer.userID, ackBuffer.message);
-
-    //close connection
-    close(tcpSock); 
+ 
     return ackBuffer;
 }
 
-void serverLogin(int userID, unsigned int privateKey) {
+void serverLogin(int userID, unsigned int privateKey, int tcpSock) {
     PClientToLodiServer loginMessage;           // message to send to Lodi server
     
     // set message varriables
@@ -219,20 +217,26 @@ void serverLogin(int userID, unsigned int privateKey) {
     unsigned long digitalSig = rsaEncrypt(currentTime, privateKey); 
     loginMessage.digitalSig = digitalSig;
 
-    sendMessage(loginMessage);
+    sendMessage(loginMessage, tcpSock);
+
+    //close connection
+    close(tcpSock);
 }
 
-void serverLogout(int userID) {
+void serverLogout(int userID, int tcpSock) {
     PClientToLodiServer logoutMessage;
 
     memset(&logoutMessage, 0, sizeof(logoutMessage));
     logoutMessage.messageType = logout;
     logoutMessage.userID = userID;
 
-    sendMessage(logoutMessage);
+    sendMessage(logoutMessage, tcpSock);
+    
+    //close connection
+    close(tcpSock);
 }
 
-void makePost(int userID) {
+void makePost(int userID, int tcpSock) {
     PClientToLodiServer postMessage;
 
     memset(&postMessage, 0, sizeof(postMessage));
@@ -245,10 +249,13 @@ void makePost(int userID) {
     printf("enter text < 100 characters to post: \n");
     fgets(postMessage.message, 99, stdin);
 
-    sendMessage(postMessage);
+    sendMessage(postMessage, tcpSock);
+
+    //close connection
+    close(tcpSock);
 }
 
-void followRequest(int userID) {
+void followRequest(int userID, int tcpSock) {
     PClientToLodiServer followMessage;
 
     memset(&followMessage, 0, sizeof(followMessage));
@@ -257,10 +264,13 @@ void followRequest(int userID) {
     printf("enter id of user to follow: \n");
     scanf("%u", &followMessage.recipientID);
 
-    sendMessage(followMessage);
+    sendMessage(followMessage, tcpSock);
+
+    //close connection
+    close(tcpSock);
 }
 
-void unfollowRequest(int userID) {
+void unfollowRequest(int userID, int tcpSock) {
     PClientToLodiServer followMessage;
 
     memset(&followMessage, 0, sizeof(followMessage));
@@ -269,5 +279,8 @@ void unfollowRequest(int userID) {
     printf("enter id of user to unfollow: \n");
     scanf("%u", &followMessage.recipientID);
 
-    sendMessage(followMessage);
+    sendMessage(followMessage, tcpSock);
+
+    //close connection
+    close(tcpSock);
 }
