@@ -15,6 +15,7 @@
 void DieWithError(char *errorMessage);
 void serverLogin(int userID, unsigned int privateKey, int tcpSock);
 void serverLogout(int userID, int tcpSock);
+void makePost(int userID, int tcpSock);
 
 int main(int argc, char *argv[]) // argc counts the arguments and argv contains them
 {
@@ -108,7 +109,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
 
             switch(option) {
                 case 1:
-                    //TODO post
+                    makePost(userID, tcpSock);
                     break;
                 case 2:
                     //TODO request feed of messages from followed idols
@@ -226,4 +227,16 @@ void serverLogout(int userID, int tcpSock) {
     logoutMessage.userID = userID;
 
     sendMessage(tcpSock, logoutMessage);
+}
+
+void makePost(int userID, int tcpSock) {
+    PClientToLodiServer postMessage;
+
+    memset(&postMessage, 0, sizeof(postMessage));
+    postMessage.messageType = post;
+    postMessage.userID = userID;
+    printf("enter text to post: \n");
+    scanf("%99s", postMessage.message);
+
+    sendMessage(tcpSock, postMessage);
 }

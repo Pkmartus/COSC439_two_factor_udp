@@ -231,8 +231,24 @@ int main(int argc, char *argv[])
                 printf("[Lodi_Server] Response -> Ack Login to Lodi Client for user: %d\n", lodiClientMsg.userID);
                 break;
             case post:
+                //add the message and userID to the array
+                messages[numMessages].userID = lodiClientMsg.userID;
+                strncpy(messages[numMessages].message, lodiClientMsg.message, sizeof(messages[numMessages].message) -1);
+                messages[numMessages].message[sizeof(messages[numMessages].message) - 1] = '\0';
+
                 // TODO ack post
-                // store the post and the idol who posted it
+                //create message
+                memset(&lodiResponseMsg, 0, sizeof(lodiResponseMsg));
+                lodiResponseMsg.messageType = ackPost;
+                lodiResponseMsg.userID = messages[numMessages].userID;
+                strncpy(lodiResponseMsg.message, messages[numMessages].message, sizeof(lodiClientMsg.message)-1);
+                lodiClientMsg.message[sizeof(lodiClientMsg.message) - 1] = '\0';
+                numMessages++;
+
+                //send ack
+                if (send(connectToClientSock, (void *)&lodiResponseMsg, lodiResponseMsgSize, 0) != lodiResponseMsgSize)
+                    DieWithError("[Lodi_Server] Acknowlegement message failed to send");
+                printf("[Lodi_Server] Response -> Ack Message: %s to Lodi Client for user: %d\n",lodiClientMsg.message, lodiClientMsg.userID);
                 break;
             case feed:
                 // TODO feed
