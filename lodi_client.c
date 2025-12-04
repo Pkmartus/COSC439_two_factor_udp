@@ -17,6 +17,7 @@ void serverLogin(int userID, unsigned int privateKey);
 void serverLogout(int userID);
 void makePost(int userID);
 void followRequest(int userID);
+void unfollowRequest(int userID);
 
 int main(int argc, char *argv[]) // argc counts the arguments and argv contains them
 {
@@ -118,7 +119,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
                     followRequest(userID);
                     break;
                 case 4:
-                    //TODO unfollow an idol
+                    unfollowRequest(userID);
                     break;
                 case 5:
                     serverLogout(userID);
@@ -254,6 +255,18 @@ void followRequest(int userID) {
     followMessage.messageType = follow;
     followMessage.userID = userID;
     printf("enter id of user to follow: \n");
+    scanf("%u", &followMessage.recipientID);
+
+    sendMessage(followMessage);
+}
+
+void unfollowRequest(int userID) {
+    PClientToLodiServer followMessage;
+
+    memset(&followMessage, 0, sizeof(followMessage));
+    followMessage.messageType = unfollow;
+    followMessage.userID = userID;
+    printf("enter id of user to unfollow: \n");
     scanf("%u", &followMessage.recipientID);
 
     sendMessage(followMessage);
