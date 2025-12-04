@@ -240,3 +240,15 @@ void makePost(int userID, int tcpSock) {
 
     sendMessage(tcpSock, postMessage);
 }
+
+void followRequest(int userID, int tcpSock) {
+    PClientToLodiServer followMessage;
+
+    memset(&followMessage, 0, sizeof(followMessage));
+    followMessage.messageType = follow;
+    followMessage.userID = userID;
+    printf("enter id of user to follow: \n");
+    scanf("%d", followMessage.recipientID);
+
+    sendMessage(tcpSock, followMessage);
+}
