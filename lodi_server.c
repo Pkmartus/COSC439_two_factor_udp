@@ -209,6 +209,7 @@ int main(int argc, char *argv[])
                         memset(&newuser, 0, sizeof(UserSignInStatus));
                         newuser.userID = lodiClientMsg.userID;
                         newuser.signedIn = 1;
+                        newuser.numIdols = 0;
                         loggedInUsers[numUsers] = newuser;
                         ++numUsers;
                         //verify that the user is now logged in
@@ -223,6 +224,7 @@ int main(int argc, char *argv[])
                 memset(&lodiResponseMsg, 0, sizeof(lodiResponseMsg));
                 lodiResponseMsg.messageType = ackLogin;
                 lodiResponseMsg.userID = lodiClientMsg.userID;
+                sprintf(lodiResponseMsg.message, "%s\n", "Login successful\n");
                 lodiResponseMsgSize = sizeof(lodiResponseMsg);
 
                 // send a message back
@@ -241,14 +243,15 @@ int main(int argc, char *argv[])
                 memset(&lodiResponseMsg, 0, sizeof(lodiResponseMsg));
                 lodiResponseMsg.messageType = ackPost;
                 lodiResponseMsg.userID = messages[numMessages].userID;
-                strncpy(lodiResponseMsg.message, messages[numMessages].message, sizeof(lodiClientMsg.message)-1);
-                lodiClientMsg.message[sizeof(lodiClientMsg.message) - 1] = '\0';
+                sprintf(lodiResponseMsg.message, "post successful: %s\n", messages[numMessages].message);
+                lodiResponseMsgSize = sizeof(lodiResponseMsg);
                 numMessages++;
+                
 
                 //send ack
                 if (send(connectToClientSock, (void *)&lodiResponseMsg, lodiResponseMsgSize, 0) != lodiResponseMsgSize)
                     DieWithError("[Lodi_Server] Acknowlegement message failed to send");
-                printf("[Lodi_Server] Response -> Ack Message: %s to Lodi Client for user: %d\n",lodiClientMsg.message, lodiClientMsg.userID);
+                printf("[Lodi_Server] Response -> Ack Message: %s to Lodi Client for user: %d\n", lodiResponseMsg.message, lodiClientMsg.userID);
                 break;
             case feed:
                 // TODO feed
@@ -257,7 +260,26 @@ int main(int argc, char *argv[])
                 break;
             case follow:
                 // TODO follow
+                memset(&lodiResponseMsg, 0, sizeof(lodiResponseMsg));
+                lodiResponseMsg.messageType = ackFollow;
+                lodiResponseMsg.userID = lodiClientMsg.userID;
                 // server should update list of idols the fan is following
+                if((userIndex = findUser(lodiClientMsg.recipientID, loggedInUsers, numUsers)) >= 0) {
+                    //add user to list of followed users
+                    loggedInUsers[userIndex].folllowedIdolIDs[loggedInUsers[userIndex].numIdols] = lodiClientMsg.recipientID;
+                    loggedInUsers[userIndex].numIdols += 1;
+                    sprintf(lodiResponseMsg.message, "User: %d successfully followed", lodiClientMsg.recipientID);
+                } else {
+                    sprintf(lodiResponseMsg.message, "User: %d not found", lodiClientMsg.recipientID);
+                }
+
+                lodiResponseMsgSize = sizeof(lodiResponseMsg);
+
+                //send ack
+                if (send(connectToClientSock, (void *)&lodiResponseMsg, lodiResponseMsgSize, 0) != lodiResponseMsgSize)
+                    DieWithError("[Lodi_Server] Acknowlegement message failed to send");
+                    //todo change result to reflect the actual result
+                printf("[Lodi_Server] Response -> Ack Message: User: %d successfully followed User: %d\n",lodiClientMsg.userID, lodiClientMsg.recipientID);
                 break;
             case unfollow:
                 // TODO unfollow
@@ -276,6 +298,7 @@ int main(int argc, char *argv[])
                     memset(&lodiResponseMsg, 0, sizeof(lodiResponseMsg));
                     lodiResponseMsg.messageType = ackLogout;
                     lodiResponseMsg.userID = lodiClientMsg.userID;
+                    sprintf(lodiResponseMsg.message, "User: %d successfully logged out\n", lodiClientMsg.userID);
                     lodiResponseMsgSize = sizeof(lodiResponseMsg);
 
                     // send a message back

@@ -14,7 +14,7 @@ typedef struct {
     unsigned int recipientID; /* message recipient identifier */
     unsigned long timestamp; /* timestamp */
     unsigned long digitalSig; /* encrypted timestamp */
-    char message[100]; /* text message */
+    char message[120]; /* text message */
 } PClientToLodiServer;
 
 
@@ -22,7 +22,7 @@ typedef struct {
 typedef struct {
     enum {ackLogin, ackPost, ackFeed, ackFollow, ackUnfollow, ackLogout, feedMessage} messageType;
     unsigned int userID; /* unique client identifier */
-    char message[100]; /* posted text message */
+    char message[120]; /* posted text message */
     unsigned int next; //my addition, used in ackFeed to send the number of messages coming in the feed. send type feed message after that
 } LodiServerMessage; /* an unsigned int is 32 bits = 4 bytes */
 
