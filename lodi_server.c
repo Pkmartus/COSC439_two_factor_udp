@@ -14,55 +14,61 @@
 
 void DieWithError(char *errorMessage);
 PClientToLodiServer recvFromClient(int tcpSock);
-int findUser(int userID, UserSignInStatus listUsers[], int numUsers);
+int findUser(int userID);
 void printLoggedInUsers(UserSignInStatus usersList[], int numUsers);
 int findIdol(int idolID, unsigned int listIdols[], int numIdols);
+void getFeed(int userID);
 
 #define MAX_ENTRIES 20
 #define MAXPENDING 20 // maximum pending client connections
 
+// local
+int udpSock; // socket for communicating with tfa and pke server
+struct sockaddr_in lodiServAddr;
+struct sockaddr_in fromAddr;
+unsigned int fromSize;
+unsigned short lodiServerPort;
+
+//  Lodi Client
+int listenForClientSock;
+int connectToClientSock;           // new to project 2, socket for the lodi client
+struct sockaddr_in lodiClientAddr; // address
+unsigned int lodiClientAddrLen;    // length of address
+PClientToLodiServer lodiClientMsg; // buffer for client message
+int lodiClientMsgSize;             // size of client message
+LodiServerMessage lodiResponseMsg; // acknowlegement to be sent to client
+unsigned int lodiResponseMsgSize;
+
+// PKE Server
+struct sockaddr_in pkeServAddr; // pke server address
+unsigned short pkeServPort;     // pke server port
+char *pkeServIP;                // the ip address of the PKE server
+TOPKServer pkeRequest;          // message to send to pke server
+FromPKServer pkeResponse;       // buffer for response from PKE server
+unsigned int pkeResponseSize;
+
+// TFA Server
+struct sockaddr_in tfaServAddr;              // tfa server address
+unsigned short tfaServPort;                  // tfa server port
+char *tfaServIP;                             // the ip address of the TFA server
+TFAClientOrLodiServerToTFAServer tfaRequest; // message to send to TFA server
+TFAServerToLodiServer tfaResponse;           // buffer for response from TFA server
+unsigned int tfaResponseSize;
+
+// Data structures for login
+UserSignInStatus loggedInUsers[MAX_ENTRIES];
+unsigned int numUsers = 0;    // count of the users kept in loggedIn Users
+UserMessages messages[100];   // keep track of messages each user has sent
+unsigned int numMessages = 0; // number of messages in list
+// FollowingIdol following[MAX_ENTRIES*MAX_ENTRIES]; // keep track of who's following who
+
+int userIndex;
+int idolIndex;
+int numInFeed;
+UserMessages userFeed[100];
+
 int main(int argc, char *argv[])
 {
-    // local
-    int udpSock; // socket for communicating with tfa and pke server
-    struct sockaddr_in lodiServAddr;
-    struct sockaddr_in fromAddr;
-    unsigned int fromSize;
-    unsigned short lodiServerPort;
-
-    //  Lodi Client
-    int listenForClientSock;
-    int connectToClientSock;           // new to project 2, socket for the lodi client
-    struct sockaddr_in lodiClientAddr; // address
-    unsigned int lodiClientAddrLen;    // length of address
-    PClientToLodiServer lodiClientMsg; // buffer for client message
-    int lodiClientMsgSize;             // size of client message
-    LodiServerMessage lodiResponseMsg; // acknowlegement to be sent to client
-    unsigned int lodiResponseMsgSize;
-
-    // PKE Server
-    struct sockaddr_in pkeServAddr; // pke server address
-    unsigned short pkeServPort;     // pke server port
-    char *pkeServIP;                // the ip address of the PKE server
-    TOPKServer pkeRequest;          // message to send to pke server
-    FromPKServer pkeResponse;       // buffer for response from PKE server
-    unsigned int pkeResponseSize;
-
-    // TFA Server
-    struct sockaddr_in tfaServAddr;              // tfa server address
-    unsigned short tfaServPort;                  // tfa server port
-    char *tfaServIP;                             // the ip address of the TFA server
-    TFAClientOrLodiServerToTFAServer tfaRequest; // message to send to TFA server
-    TFAServerToLodiServer tfaResponse;           // buffer for response from TFA server
-    unsigned int tfaResponseSize;
-
-    // Data structures for login
-    UserSignInStatus loggedInUsers[MAX_ENTRIES];
-    unsigned int numUsers = 0;    // count of the users kept in loggedIn Users
-    UserMessages messages[100];   // keep track of messages each user has sent
-    unsigned int numMessages = 0; // number of messages in list
-    // FollowingIdol following[MAX_ENTRIES*MAX_ENTRIES]; // keep track of who's following who
-
     lodiServerPort = LODI_DEFAULT_PORT; // first argument is the local port
 
     // Create datagram UDP Socket
@@ -136,8 +142,6 @@ int main(int argc, char *argv[])
         printf("[Lodi_Server] Recieved <- Message from a client\n");
 
         // determine the type of message being sent and respond accordingly
-        int userIndex;
-        int idolIndex;
         switch (lodiClientMsg.messageType)
         {
         case login:
@@ -202,7 +206,7 @@ int main(int argc, char *argv[])
             if (numUsers < MAX_ENTRIES)
             {
                 // if user has logged in before log them back in
-                if ((userIndex = findUser(lodiClientMsg.userID, loggedInUsers, numUsers)) >= 0)
+                if ((userIndex = findUser(lodiClientMsg.userID)) >= 0)
                 {
                     loggedInUsers[userIndex].signedIn = 1;
                     printf("[Lodi_Server] user: %d signed back in\n", loggedInUsers[userIndex].userID);
@@ -217,7 +221,7 @@ int main(int argc, char *argv[])
                     loggedInUsers[numUsers] = newuser;
                     ++numUsers;
                     // verify that the user is now logged in
-                    printf("[Lodi_Server] REGISTER user=%u\n", loggedInUsers[findUser(lodiClientMsg.userID, loggedInUsers, numUsers)].userID);
+                    printf("[Lodi_Server] REGISTER user=%u\n", loggedInUsers[findUser(lodiClientMsg.userID)].userID);
                 }
             }
             else
@@ -260,7 +264,11 @@ int main(int argc, char *argv[])
             break;
         case feed:
             // TODO feed
-            // send messages with how many posts are incoming
+            // collect messages in feed
+            getFeed(lodiClientMsg.userID);
+
+            // send message with how many posts are incoming
+
             // send all posts from followed idols
             break;
         case follow:
@@ -269,10 +277,10 @@ int main(int argc, char *argv[])
             lodiResponseMsg.messageType = ackFollow;
             lodiResponseMsg.userID = lodiClientMsg.userID;
             // find index of user first
-            if ((userIndex = findUser(lodiClientMsg.userID, loggedInUsers, numUsers)) >= 0)
+            if ((userIndex = findUser(lodiClientMsg.userID)) >= 0)
             {
                 // server should update list of idols the fan is following
-                if ((idolIndex = findUser(lodiClientMsg.recipientID, loggedInUsers, numUsers)) >= 0)
+                if ((idolIndex = findUser(lodiClientMsg.recipientID)) >= 0)
                 {
                     // add user to list of followed users
                     loggedInUsers[userIndex].folllowedIdolIDs[loggedInUsers[userIndex].numIdols] = lodiClientMsg.recipientID;
@@ -303,7 +311,7 @@ int main(int argc, char *argv[])
             lodiResponseMsg.messageType = ackFollow;
             lodiResponseMsg.userID = lodiClientMsg.userID;
             // find index of user first
-            if ((userIndex = findUser(lodiClientMsg.userID, loggedInUsers, numUsers)) >= 0)
+            if ((userIndex = findUser(lodiClientMsg.userID)) >= 0)
             {
                 // find idol in list of followed users
                 if ((idolIndex = findIdol(lodiClientMsg.recipientID, loggedInUsers[userIndex].folllowedIdolIDs, loggedInUsers[userIndex].numIdols)) >= 0)
@@ -311,9 +319,9 @@ int main(int argc, char *argv[])
                     // remove user from list of followed users and shift the remaining users over
                     for (int i = idolIndex; i < loggedInUsers[userIndex].numIdols - 1; i++)
                     {
-                        loggedInUsers[userIndex].folllowedIdolIDs[i] = loggedInUsers[userIndex].folllowedIdolIDs[i+1];
+                        loggedInUsers[userIndex].folllowedIdolIDs[i] = loggedInUsers[userIndex].folllowedIdolIDs[i + 1];
                     }
-                    //decerement followed idols by 1
+                    // decerement followed idols by 1
                     loggedInUsers[userIndex].numIdols -= 1;
 
                     sprintf(lodiResponseMsg.message, "Successfully Unollowed User: %d", lodiClientMsg.recipientID);
@@ -339,7 +347,7 @@ int main(int argc, char *argv[])
         case logout:
             // logout
             // server updates logged in users. list of followed idols should stay
-            if ((userIndex = findUser(lodiClientMsg.userID, loggedInUsers, numUsers)) >= 0)
+            if ((userIndex = findUser(lodiClientMsg.userID)) >= 0)
             {
                 // set logged in status to false
                 loggedInUsers[userIndex].signedIn = 0;
@@ -391,15 +399,16 @@ PClientToLodiServer recvFromClient(int tcpSock)
     return messageBuffer;
 }
 
-int findUser(int userID, UserSignInStatus listUsers[], int numUsers)
+int findUser(int userID)
 {
     for (int i = 0; i < numUsers; i++)
     {
-        if (userID == listUsers[i].userID)
+        if (userID == loggedInUsers[i].userID)
         {
             return i;
         }
     }
+    printf("returning %d", -1);
     return -1;
 }
 
@@ -426,5 +435,24 @@ void printLoggedInUsers(UserSignInStatus usersList[], int numUsers)
             printf("yes\n");
         else
             printf("no\n");
+    }
+}
+
+void getFeed(int userID)
+{
+    //zero out buffers
+    numInFeed = 0;
+    memset(userFeed, 0, sizeof(userFeed));
+    UserSignInStatus user = loggedInUsers[findUser(userID)];
+
+    //for each idol user is following find their messages
+    for(int i = 0; i < user.numIdols; i++) {
+        for (int j = 0; j < numMessages; j++) {
+            if(messages[j].userID == user.folllowedIdolIDs[i])
+            {
+                userFeed[numInFeed] = messages[j];
+                numInFeed++;
+            }
+        } 
     }
 }
