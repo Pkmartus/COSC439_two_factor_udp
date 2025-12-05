@@ -2,7 +2,7 @@
 #ifndef TFAMESSAGES_H /* include guard prevents header being added to a file more than once*/
 #define TFAMESSAGES_H
 
-#define TFA_DEFAULT_IP "35.238.71.225"
+#define TFA_DEFAULT_IP "34.29.248.19"
 #define TFA_DEFAULT_PORT 8080
 
 /* sample code from handout */

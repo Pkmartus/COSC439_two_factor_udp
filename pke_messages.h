@@ -2,7 +2,7 @@
 #ifndef PKEMESSAGES_H
 #define PKEMESSAGES_H
 
-#define PKE_DEFAULT_IP "34.56.167.165"
+#define PKE_DEFAULT_IP "34.46.208.21"
 #define PKE_DEFAULT_PORT 8080
 
 //Message  to PKE server (renamed PClientToPkServer)

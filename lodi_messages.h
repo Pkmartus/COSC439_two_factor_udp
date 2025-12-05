@@ -2,7 +2,7 @@
 #ifndef LODIMESSAGES_H
 #define LODIMESSAGES_H
 
-#define LODI_DEFAULT_IP "34.69.20.99"
+#define LODI_DEFAULT_IP "136.113.195.225"
 #define LODI_DEFAULT_PORT 8080
 
 /*sample code from handout*/
