@@ -1,4 +1,3 @@
-//Primary Dev Chanuth Jayatissa
 #include "pke_messages.h"
 #include <stdio.h>
 #include <stdlib.h>

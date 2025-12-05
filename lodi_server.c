@@ -1,5 +1,4 @@
 /*lodi_server.c*/
-// Primary Dev Patrick Martus
 //(most logic based on examples)
 #include "rsa.h"
 #include "tfa_messages.h"

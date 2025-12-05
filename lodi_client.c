@@ -1,5 +1,4 @@
 /*lodi_client.c*/
-// Primary Dev Patrick Martus
 //(most logic based on examples)
 #include "lodi_messages.h"
 #include "pke_messages.h"

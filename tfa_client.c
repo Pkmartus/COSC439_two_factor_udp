@@ -1,4 +1,3 @@
-//Primary Dev Chanuth Jayatissa
 #include "tfa_messages.h"
 #include "rsa.h"
 #include <sys/socket.h>

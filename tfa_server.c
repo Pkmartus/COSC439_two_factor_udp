@@ -1,4 +1,3 @@
-//Primary Dev Chanuth Jayatissa
 #include "pke_messages.h"
 #include "tfa_messages.h"
 #include "rsa.h"
