@@ -11,6 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 
+//method declarations
 void DieWithError(char *errorMessage);
 PClientToLodiServer recvFromClient(int tcpSock);
 int findUser(int userID);
@@ -61,6 +62,7 @@ UserMessages messages[100];   // keep track of messages each user has sent
 unsigned int numMessages = 0; // number of messages in list
 // FollowingIdol following[MAX_ENTRIES*MAX_ENTRIES]; // keep track of who's following who
 
+//instance variables for finding users, idols, and feeds
 int userIndex;
 int idolIndex;
 int numInFeed;
@@ -247,7 +249,7 @@ int main(int argc, char *argv[])
             strncpy(messages[numMessages].message, lodiClientMsg.message, sizeof(messages[numMessages].message) - 1);
             messages[numMessages].message[sizeof(messages[numMessages].message) - 1] = '\0';
 
-            // TODO ack post
+            //ack post
             // create message
             memset(&lodiResponseMsg, 0, sizeof(lodiResponseMsg));
             lodiResponseMsg.messageType = ackPost;
@@ -262,7 +264,7 @@ int main(int argc, char *argv[])
             printf("[Lodi_Server] Response -> Ack Message: %s to Lodi Client for user: %d\n", lodiResponseMsg.message, lodiClientMsg.userID);
             break;
         case feed:
-            // TODO feed
+            //feed
             // collect messages in feed
             getFeed(lodiClientMsg.userID);
 
@@ -323,11 +325,10 @@ int main(int argc, char *argv[])
             // send ack
             if (send(connectToClientSock, (void *)&lodiResponseMsg, lodiResponseMsgSize, 0) != lodiResponseMsgSize)
                 DieWithError("[Lodi_Server] Acknowlegement message failed to send");
-            // todo change result to reflect the actual result
             printf("[Lodi_Server] Response -> Ack Message: User: %d %s\n", lodiClientMsg.userID, lodiResponseMsg.message);
             break;
         case unfollow:
-            // TODO unfollow
+            // unfollow
             memset(&lodiResponseMsg, 0, sizeof(lodiResponseMsg));
             lodiResponseMsg.messageType = ackFollow;
             lodiResponseMsg.userID = lodiClientMsg.userID;
@@ -362,7 +363,6 @@ int main(int argc, char *argv[])
             // send ack
             if (send(connectToClientSock, (void *)&lodiResponseMsg, lodiResponseMsgSize, 0) != lodiResponseMsgSize)
                 DieWithError("[Lodi_Server] Acknowlegement message failed to send");
-            // todo change result to reflect the actual result
             printf("[Lodi_Server] Response -> Ack Message: User: %d %s\n", lodiClientMsg.userID, lodiResponseMsg.message);
             break;
         case logout:

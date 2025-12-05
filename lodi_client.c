@@ -157,6 +157,7 @@ int main(int argc, char *argv[]) // argc counts the arguments and argv contains 
     exit(0);
 }
 
+//creates the tcp sock, connects to server, sends and recieves messages, prints out results
 LodiServerMessage sendMessage(PClientToLodiServer message)
 {
     int tcpSock;
@@ -204,6 +205,7 @@ LodiServerMessage sendMessage(PClientToLodiServer message)
     }
     printf("[Lodi_Client] Response <- Ack Type: %s User: %d message %s\n", ackTypes[ackBuffer.messageType], ackBuffer.userID, ackBuffer.message);
 
+    //recieve the message feed if nessesary
     if (ackBuffer.messageType == ackFeed) {
     LodiServerMessage feedBuffer;
     int totalBytesRcvd, bytesRcvd;
@@ -227,6 +229,7 @@ LodiServerMessage sendMessage(PClientToLodiServer message)
     return ackBuffer;
 }
 
+//sends login request
 void serverLogin(int userID, unsigned int privateKey)
 {
     PClientToLodiServer loginMessage; // message to send to Lodi server
@@ -244,6 +247,7 @@ void serverLogin(int userID, unsigned int privateKey)
     sendMessage(loginMessage);
 }
 
+//sends logout request
 void serverLogout(int userID)
 {
     PClientToLodiServer logoutMessage;
@@ -255,6 +259,7 @@ void serverLogout(int userID)
     sendMessage(logoutMessage);
 }
 
+//prompts user for post and sends the post to the server
 void makePost(int userID)
 {
     PClientToLodiServer postMessage;
@@ -273,6 +278,7 @@ void makePost(int userID)
     sendMessage(postMessage);
 }
 
+//asks user for id and sends follow request
 void followRequest(int userID)
 {
     PClientToLodiServer followMessage;
@@ -286,6 +292,7 @@ void followRequest(int userID)
     sendMessage(followMessage);
 }
 
+//asks user for id and sends unfollow request
 void unfollowRequest(int userID)
 {
     PClientToLodiServer followMessage;
@@ -299,6 +306,7 @@ void unfollowRequest(int userID)
     sendMessage(followMessage);
 }
 
+//requests the message feed
 void feedRequest(int userID)
 {
     PClientToLodiServer feedMessage;
