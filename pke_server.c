@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
         DieWithError("bind() failed");
     }
 
-    printf("[PKE_SERVER] Listening on port: %hu\n", port);
+    printf("[PKE_SERVER] Listening on %s:%hu\n", PKE_DEFAULT_IP, port);
 
     /* In-memory directory */
     unsigned int registeredUserIds[MAX_ENTRIES];

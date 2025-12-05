@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 
     for (;;) // run forever
     {
-        printf("[Lodi_Server] Listening on port: %d \n", lodiServerPort);
+        printf("[Lodi_Server] Listening on %s:%d \n",LODI_DEFAULT_IP, lodiServerPort);
         // set size of in/out parameter
         lodiClientAddrLen = sizeof(lodiClientAddr);
 
